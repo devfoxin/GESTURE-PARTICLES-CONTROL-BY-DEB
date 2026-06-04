@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive 3D Hand Particle System</title>
+    <title>Advanced 3D Hand Particle System</title>
     <style>
         body {
             margin: 0;
@@ -19,7 +19,6 @@
             left: 0;
             z-index: 1;
         }
-        /* Hidden webcam video element used for MediaPipe tracking */
         #webcam {
             transform: scaleX(-1);
             position: absolute;
@@ -48,6 +47,14 @@
         h1 { margin: 0 0 10px 0; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 2px; color: #00ffcc; }
         .stat { margin: 5px 0; font-size: 0.9rem; }
         .highlight { color: #ff00ff; font-weight: bold; }
+        .menu-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            margin-top: 15px;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
     </style>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -60,105 +67,136 @@
     <video id="webcam" autoplay playsinline></video>
 
     <div id="ui-overlay">
-        <h1>Gesture Particle Engine</h1>
+        <h1>Gesture Particle Engine v2</h1>
         <div class="stat">Active Shape: <span id="current-shape" class="highlight">Saturn</span></div>
-        <div class="stat">Hand Distance (Expansion): <span id="hand-expansion" class="highlight">0.0</span></div>
-        <div class="stat">Hand Position (Rotation): <span id="hand-rotation" class="highlight">X: 0, Y: 0</span></div>
-        <div style="margin-top: 15px; font-size: 0.8rem; color: #aaa;">
-            • Hold up 1 finger: <span style="color: #fff">Saturn</span><br>
-            • Hold up 2 fingers: <span style="color: #fff">Heart</span><br>
-            • Hold up 3 fingers: <span style="color: #fff">Flower</span><br>
-            • Hold up 4 fingers: <span style="color: #fff">Fireworks</span>
+        <div class="stat">Expansion Factor: <span id="hand-expansion" class="highlight">1.0</span></div>
+        <div class="stat">Rotation Target: <span id="hand-rotation" class="highlight">X: 0, Y: 0</span></div>
+        
+        <div class="menu-grid">
+            <div>1 Finger: <span style="color: #fff">Saturn</span></div>
+            <div>2 Fingers: <span style="color: #fff">Heart</span></div>
+            <div>3 Fingers: <span style="color: #fff">Flower</span></div>
+            <div>4 Fingers: <span style="color: #fff">Fireworks</span></div>
+            <div>5 Fingers: <span style="color: #fff">Infinity Loop</span></div>
+            <div>Thumb + Pinky: <span style="color: #fff">DNA Helix</span></div>
+            <div>Fist / 0 Fingers: <span style="color: #fff">Tornado</span></div>
         </div>
     </div>
 
     <script>
         // --- 1. GLOBAL SETTINGS & STATE ---
-        const PARTICLE_COUNT = 15000;
+        const PARTICLE_COUNT = 18000; // Increased particle count for crisper shapes
         let scene, camera, renderer, particleGeometry, particleSystem;
         let targetPositions = new Float32Array(PARTICLE_COUNT * 3);
         let velocities = new Float32Array(PARTICLE_COUNT * 3);
         let colors = new Float32Array(PARTICLE_COUNT * 3);
         
-        let currentShapeIndex = 0; // 0: Saturn, 1: Heart, 2: Flower, 3: Fireworks
-        const shapes = ['Saturn', 'Heart', 'Flower', 'Fireworks'];
+        let currentShapeIndex = 0;
+        const shapes = ['Saturn', 'Heart', 'Flower', 'Fireworks', 'Infinity Loop', 'DNA Helix', 'Tornado'];
         
-        // Interactive control metrics driven by hand gestures
         let globalExpansion = 1.0;
         let targetRotationX = 0;
         let targetRotationY = 0;
         let baseColor = new THREE.Color(0x00ffcc);
 
-        // --- 2. GENERATE SHAPE TEMPLATES (MATH FORMULAS) ---
+        // --- 2. MATHEMATICAL SHAPE TEMPLATES ---
         
-        // Shape 0: Saturn (A central sphere with a wide flat ring system)
         function getSaturnPosition(i, target) {
-            if (i < PARTICLE_COUNT * 0.4) { // Central Planet Sphere
-                const u = Math.random();
-                const v = Math.random();
-                const theta = u * 2.0 * Math.PI;
-                const phi = Math.acos(2.0 * v - 1.0);
+            if (i < PARTICLE_COUNT * 0.4) {
+                const u = Math.random(); const v = Math.random();
+                const theta = u * 2.0 * Math.PI; const phi = Math.acos(2.0 * v - 1.0);
                 const r = 1.5 + Math.random() * 0.2;
                 target[i * 3] = r * Math.sin(phi) * Math.cos(theta);
                 target[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
                 target[i * 3 + 2] = r * Math.cos(phi);
-            } else { // The Ring System
+            } else {
                 const theta = Math.random() * Math.PI * 2;
                 const r = 2.5 + Math.random() * 2.5;
                 target[i * 3] = r * Math.cos(theta);
-                target[i * 3 + 1] = (Math.random() - 0.5) * 0.15; // Flattened Y axis
+                target[i * 3 + 1] = (Math.random() - 0.5) * 0.15;
                 target[i * 3 + 2] = r * Math.sin(theta);
             }
         }
 
-        // Shape 1: Heart Shape (Using 3D Mathematical Heart Formula)
         function getHeartPosition(i, target) {
             const t = Math.PI * (2 * Math.random() - 1);
             const phi = Math.PI * (Math.random() - 0.5);
-            
-            // Parametric equations for a heart shape
             const x = 16 * Math.pow(Math.sin(t), 3);
             const y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
-            const z = phi * 5; // give it 3D depth
-            
-            // Scale it down to match scene dimensions
-            target[i * 3] = x * 0.2;
-            target[i * 3 + 1] = y * 0.2;
-            target[i * 3 + 2] = z * 0.2;
+            const z = phi * 5;
+            target[i * 3] = x * 0.2; target[i * 3 + 1] = y * 0.2; target[i * 3 + 2] = z * 0.2;
         }
 
-        // Shape 2: Mathematical Flower (Rose Curve / Phyllotaxis Spiral combo)
         function getFlowerPosition(i, target) {
-            const phi = i * 137.5 * (Math.PI / 180); // Golden angle
+            const phi = i * 137.5 * (Math.PI / 180);
             const r = Math.sqrt(i) / Math.sqrt(PARTICLE_COUNT) * 4;
-            const petals = 6;
-            
-            // Add wave modulation to create layered petals
-            const zMod = Math.sin(phi * petals) * 0.8 * r;
-            
-            target[i * 3] = r * Math.cos(phi);
-            target[i * 3 + 1] = zMod;
-            target[i * 3 + 2] = r * Math.sin(phi);
+            const zMod = Math.sin(phi * 6) * 0.8 * r;
+            target[i * 3] = r * Math.cos(phi); target[i * 3 + 1] = zMod; target[i * 3 + 2] = r * Math.sin(phi);
         }
 
-        // Shape 3: Fireworks (Explosive streaks projecting from center)
         function getFireworksPosition(i, target) {
-            // Assign particles randomly to discrete "streaks"
-            const totalStreaks = 60;
+            const totalStreaks = 80;
             const streakId = i % totalStreaks;
-            
             const theta = (streakId / totalStreaks) * Math.PI * 2;
             const phi = Math.acos((Math.random() * 2) - 1);
-            
-            // Random distance along the burst vector
-            const speed = 2.0 + Math.random() * 4.0; 
-            
+            const speed = 2.0 + Math.random() * 5.0; 
             target[i * 3] = speed * Math.sin(phi) * Math.cos(theta);
             target[i * 3 + 1] = speed * Math.sin(phi) * Math.sin(theta);
             target[i * 3 + 2] = speed * Math.cos(phi);
         }
 
-        // Master function to trigger transition smoothly
+        // NEW SHAPE 4: Infinity Loop (Lemniscate of Gerono with Z depth)
+        function getInfinityPosition(i, target) {
+            const t = (i / PARTICLE_COUNT) * Math.PI * 2 * 20; // Multiple loops wrap the distribution
+            const scale = 4.5;
+            // Mathematical lemniscate geometry
+            target[i * 3] = scale * Math.sin(t);
+            target[i * 3 + 1] = scale * Math.sin(t) * Math.cos(t);
+            // Spread thickness cleanly via random variance
+            target[i * 3 + 2] = (Math.random() - 0.5) * 1.5 + Math.cos(t) * 0.5;
+        }
+
+        // NEW SHAPE 5: DNA Double Helix
+        function getDNAPosition(i, target) {
+            const strand = i % 2; // Split particles between 2 main spiraling backbone strands
+            const t = (i / PARTICLE_COUNT) * Math.PI * 12; // Length of the helix strand
+            const radius = 2.0;
+            const pitch = 0.25; // Vertical speed stretch
+
+            if (i % 15 === 0) { 
+                // Dedicate some particles to build the inner crossing "base-pair rungs"
+                const linkPercent = Math.random();
+                const angle = t + (strand * Math.PI);
+                const x1 = radius * Math.cos(angle);
+                const z1 = radius * Math.sin(angle);
+                const x2 = radius * Math.cos(angle + Math.PI);
+                const z2 = radius * Math.sin(angle + Math.PI);
+                
+                target[i * 3] = THREE.MathUtils.lerp(x1, x2, linkPercent);
+                target[i * 3 + 1] = (t * pitch) - 4.5;
+                target[i * 3 + 2] = THREE.MathUtils.lerp(z1, z2, linkPercent);
+            } else {
+                // Outer main strands
+                const angle = t + (strand * Math.PI);
+                target[i * 3] = radius * Math.cos(angle) + (Math.random() - 0.5) * 0.2;
+                target[i * 3 + 1] = (t * pitch) - 4.5; // Centers helix on screen Y axis
+                target[i * 3 + 2] = radius * Math.sin(angle) + (Math.random() - 0.5) * 0.2;
+            }
+        }
+
+        // NEW SHAPE 6: Tornado Vortex
+        function getTornadoPosition(i, target) {
+            const height = (i / PARTICLE_COUNT) * 9.0; // Total vertical height tracking
+            // Top is wide, bottom tapers down to a sharp funnel point
+            const radius = (height * 0.5) + 0.2; 
+            const angle = height * 5.0 + (Math.random() * Math.PI);
+
+            target[i * 3] = radius * Math.cos(angle);
+            target[i * 3 + 1] = height - 4.5; // Offset to center vertically
+            target[i * 3 + 2] = radius * Math.sin(angle);
+        }
+
+        // Master Controller for Smooth Swapping 
         function transitionToShape(shapeIndex) {
             currentShapeIndex = shapeIndex;
             document.getElementById('current-shape').innerText = shapes[shapeIndex];
@@ -170,11 +208,9 @@
                 else if(shapeIndex === 1) getHeartPosition(i, tempTargets);
                 else if(shapeIndex === 2) getFlowerPosition(i, tempTargets);
                 else if(shapeIndex === 3) getFireworksPosition(i, tempTargets);
-                
-                // Calculate directional velocities toward the new template positions
-                velocities[i*3] = (tempTargets[i*3] - targetPositions[i*3]) * 0.05;
-                velocities[i*3+1] = (tempTargets[i*3+1] - targetPositions[i*3+1]) * 0.05;
-                velocities[i*3+2] = (tempTargets[i*3+2] - targetPositions[i*3+2]) * 0.05;
+                else if(shapeIndex === 4) getInfinityPosition(i, tempTargets);
+                else if(shapeIndex === 5) getDNAPosition(i, tempTargets);
+                else if(shapeIndex === 6) getTornadoPosition(i, tempTargets);
                 
                 targetPositions[i*3] = tempTargets[i*3];
                 targetPositions[i*3+1] = tempTargets[i*3+1];
@@ -182,12 +218,11 @@
             }
         }
 
-        // --- 3. INITIALIZE THREE.JS GRAPHICS ---
+        // --- 3. INITIALIZE THREE.JS ---
         function initThree() {
             const container = document.getElementById('canvas-container');
-            
             scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x000000, 0.05);
+            scene.fog = new THREE.FogExp2(0x000000, 0.04);
 
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
             camera.position.z = 12;
@@ -197,12 +232,11 @@
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             container.appendChild(renderer.domElement);
 
-            // Create initial raw particles
             particleGeometry = new THREE.BufferGeometry();
             const initialPositions = new Float32Array(PARTICLE_COUNT * 3);
 
             for(let i=0; i<PARTICLE_COUNT * 3; i++) {
-                initialPositions[i] = (Math.random() - 0.5) * 20;
+                initialPositions[i] = (Math.random() - 0.5) * 25;
                 targetPositions[i] = initialPositions[i];
                 colors[i] = Math.random();
             }
@@ -210,7 +244,6 @@
             particleGeometry.setAttribute('position', new THREE.BufferAttribute(initialPositions, 3));
             particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-            // Custom glowing particle texture via HTML Canvas
             const pCanvas = document.createElement('canvas');
             pCanvas.width = 16; pCanvas.height = 16;
             const ctx = pCanvas.getContext('2d');
@@ -221,7 +254,7 @@
             const pTexture = new THREE.CanvasTexture(pCanvas);
 
             const particleMaterial = new THREE.PointsMaterial({
-                size: 0.08,
+                size: 0.07,
                 map: pTexture,
                 blending: THREE.AdditiveBlending,
                 depthWrite: false,
@@ -232,9 +265,7 @@
             particleSystem = new THREE.Points(particleGeometry, particleMaterial);
             scene.add(particleSystem);
 
-            // Setup default starting shape
             transitionToShape(0);
-
             window.addEventListener('resize', onWindowResize);
         }
 
@@ -244,110 +275,125 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        // --- 4. MEDIAPIPE HAND TRACKING & GESTURE LOGIC ---
+        // --- 4. ADVANCED GESTURE DETECTION ---
         const videoElement = document.getElementById('webcam');
         
         function onHandResults(results) {
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-                const hand = results.multiHandLandmarks[0]; // Process dominant hand
+                const hand = results.multiHandLandmarks[0];
 
-                // 1. DYNAMIC COLOR CONTROL (Map wrist position to color hues)
+                // Color engine tracking
                 const wrist = hand[0];
-                baseColor.setHSL(wrist.x, 1.0, 0.5);
+                baseColor.setHSL(wrist.x, 0.9, 0.5);
 
-                // 2. ROTATION CONTROL (Map hand average coordinates to target mesh rotation)
-                targetRotationY = (wrist.x - 0.5) * 4.0;
-                targetRotationX = (wrist.y - 0.5) * 4.0;
+                // Rotational tracking mapping
+                targetRotationY = (wrist.x - 0.5) * 4.5;
+                targetRotationX = (wrist.y - 0.5) * 4.5;
                 document.getElementById('hand-rotation').innerText = `X: ${targetRotationX.toFixed(1)}, Y: ${targetRotationY.toFixed(1)}`;
 
-                // 3. EXPANSION CONTROL (Distance between Thumb Tip [4] and Pinky Tip [20])
-                const thumbTip = hand[4];
-                const pinkyTip = hand[20];
+                // Hand spatial size metrics (distance thumb-tip to pinky-tip)
                 const dist = Math.sqrt(
-                    Math.pow(thumbTip.x - pinkyTip.x, 2) + 
-                    Math.pow(thumbTip.y - pinkyTip.y, 2) + 
-                    Math.pow(thumbTip.z - pinkyTip.z, 2)
+                    Math.pow(hand[4].x - hand[20].x, 2) + Math.pow(hand[4].y - hand[20].y, 2)
                 );
-                // Normalize and upscale structural expansion mapping
-                globalExpansion = THREE.MathUtils.lerp(globalExpansion, 0.3 + dist * 5.0, 0.1);
+                globalExpansion = THREE.MathUtils.lerp(globalExpansion, 0.4 + dist * 4.5, 0.1);
                 document.getElementById('hand-expansion').innerText = globalExpansion.toFixed(2);
 
-                // 4. GESTURE / TEMPLATE SWITCHING (Count Extended Fingers)
-                // Finger tips: Index(8), Middle(12), Ring(16), Pinky(20)
-                // Associated Knuckles: Index(6), Middle(10), Ring(14), Pinky(18)
-                let extendedFingers = 0;
-                if (hand[8].y < hand[6].y) extendedFingers++;
-                if (hand[12].y < hand[10].y) extendedFingers++;
-                if (hand[16].y < hand[14].y) extendedFingers++;
-                if (hand[20].y < hand[18].y) extendedFingers++;
+                // Tracking extended fingers status
+                const isIndexUp = hand[8].y < hand[6].y;
+                const isMiddleUp = hand[12].y < hand[10].y;
+                const isRingUp = hand[16].y < hand[14].y;
+                const isPinkyUp = hand[20].y < hand[18].y;
+                const isThumbUp = hand[4].x > hand[3].x; // Crude check for extended thumb
 
-                // Prevent zero-finger conditions from breaking layout state
-                if (extendedFingers >= 1 && extendedFingers <= 4) {
-                    const targetShape = extendedFingers - 1;
-                    if(targetShape !== currentShapeIndex) {
-                        transitionToShape(targetShape);
-                    }
+                let extendedCount = 0;
+                if (isIndexUp) extendedCount++;
+                if (isMiddleUp) extendedCount++;
+                if (isRingUp) extendedCount++;
+                if (isPinkyUp) extendedCount++;
+
+                // --- EXTENDED GESTURE DICTIONARY ---
+                let detectedShape = currentShapeIndex;
+
+                if (extendedCount === 0) {
+                    detectedShape = 6; // Closed Fist -> Tornado
+                } else if (extendedCount === 1) {
+                    detectedShape = 0; // 1 Finger -> Saturn
+                } else if (extendedCount === 2) {
+                    detectedShape = 1; // 2 Fingers -> Heart
+                } else if (extendedCount === 3) {
+                    detectedShape = 2; // 3 Fingers -> Flower
+                } else if (extendedCount === 4 && !isThumbUp) {
+                    detectedShape = 3; // 4 Fingers -> Fireworks
+                } else if (extendedCount === 4 && isThumbUp) {
+                    detectedShape = 4; // 5 Fingers Wide -> Infinity Loop
+                } 
+                
+                // Specific Gesture Shortcut: Horns / Open End Points (Thumb + Pinky up, inner down)
+                if (isPinkyUp && isThumbUp && !isIndexUp && !isMiddleUp) {
+                    detectedShape = 5; // Spreading Ends -> DNA Double Helix
+                }
+
+                if (detectedShape !== currentShapeIndex) {
+                    transitionToShape(detectedShape);
                 }
             }
         }
 
-        // Initializing MediaPipe Hands Instance
+        // Initialize Tracking Runtime
         const hands = new Hands({
             locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
         });
-
         hands.setOptions({
-            maxNumHands: 1,
-            modelComplexity: 1,
-            minDetectionConfidence: 0.5,
-            minTrackingConfidence: 0.5
+            maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6
         });
         hands.onResults(onHandResults);
 
-        // Instantiating Video Stream Feed
         const cameraFeed = new Camera(videoElement, {
-            onFrame: async () => {
-                await hands.send({ image: videoElement });
-            },
-            width: 640,
-            height: 480
+            onFrame: async () => { await hands.send({ image: videoElement }); },
+            width: 640, height: 480
         });
         cameraFeed.start();
 
-        // --- 5. RENDER LOOP (ANIMATION & PHYSICS MIGRATION) ---
+        // --- 5. PHYSICS RENDER LOOP ---
         function animate() {
             requestAnimationFrame(animate);
 
             const positions = particleGeometry.attributes.position.array;
             const colorAttribute = particleGeometry.attributes.color.array;
 
-            // Ease system rotation smoothly toward computed hand movements
+            // Move system towards tracked orientation coordinates
             particleSystem.rotation.y += (targetRotationY - particleSystem.rotation.y) * 0.05;
             particleSystem.rotation.x += (targetRotationX - particleSystem.rotation.x) * 0.05;
 
-            // Continual passive system drift
-            particleSystem.rotation.y += 0.002;
+            // Subtle continuous rotational spin
+            if (currentShapeIndex === 6) {
+                particleSystem.rotation.y += 0.04; // Spin Tornado super fast!
+            } else {
+                particleSystem.rotation.y += 0.003; 
+            }
 
             for (let i = 0; i < PARTICLE_COUNT; i++) {
                 const i3 = i * 3;
 
-                // Physics: Smoothly Lerp current position toward (target shape position * expansion factor)
+                // Physics target calculation including current scalar explosion values
                 const currentTargetX = targetPositions[i3] * globalExpansion;
                 const currentTargetY = targetPositions[i3 + 1] * globalExpansion;
                 const currentTargetZ = targetPositions[i3 + 2] * globalExpansion;
 
-                positions[i3] += (currentTargetX - positions[i3]) * 0.08;
-                positions[i3 + 1] += (currentTargetY - positions[i3 + 1]) * 0.08;
-                positions[i3 + 2] += (currentTargetZ - positions[i3 + 2]) * 0.08;
+                // Elastic drag coefficient
+                positions[i3] += (currentTargetX - positions[i3]) * 0.07;
+                positions[i3 + 1] += (currentTargetY - positions[i3 + 1]) * 0.07;
+                positions[i3 + 2] += (currentTargetZ - positions[i3 + 2]) * 0.07;
 
-                // Dynamic Color Interpolation per particle
-                // Blend a unique mix between base color and a shifting individual parameter spectrum
+                // Color Mapping Adjustments per Shape
                 const pColor = baseColor.clone();
-                if(currentShapeIndex === 3) { 
-                    // Give fireworks an explicitly randomized festive splash profile
-                    pColor.offsetHSL(i % 10 * 0.1, 0, 0); 
+                if (currentShapeIndex === 5) {
+                    // Give DNA Backbones a alternating color alternating spectrum
+                    pColor.offsetHSL((i % 2 === 0 ? 0.3 : 0.7), 0, 0);
+                } else if(currentShapeIndex === 3) {
+                    pColor.offsetHSL((i % 12 * 0.08), 0, 0); 
                 } else {
-                    pColor.offsetHSL((positions[i3] * 0.03), 0, 0);
+                    pColor.offsetHSL((positions[i3] * 0.02), 0, 0);
                 }
                 
                 colorAttribute[i3] = pColor.r;
@@ -361,7 +407,6 @@
             renderer.render(scene, camera);
         }
 
-        // Bootstrapping Core Logic Runtime
         initThree();
         animate();
     </script>
