@@ -2,14 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced 3D Hand Particle System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Responsive 3D Hand Particle System</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
             background-color: #000;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-user-select: none;
+            user-select: none;
         }
         #canvas-container {
             width: 100vw;
@@ -22,38 +24,103 @@
         #webcam {
             transform: scaleX(-1);
             position: absolute;
-            bottom: 20px;
-            right: 20px;
-            width: 160px;
-            height: 120px;
+            top: 15px;
+            right: 15px;
+            width: 120px;
+            height: 90px;
             border-radius: 8px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.2);
             z-index: 10;
             object-fit: cover;
+            background: #111;
         }
+        
+        /* --- RESPONSIVE RESPONSIVE UI OVERLAY --- */
         #ui-overlay {
             position: absolute;
-            top: 20px;
-            left: 20px;
             color: white;
             z-index: 10;
-            pointer-events: none;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 20px;
-            border-radius: 12px;
-            backdrop-filter: blur(5px);
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease;
         }
-        h1 { margin: 0 0 10px 0; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 2px; color: #00ffcc; }
-        .stat { margin: 5px 0; font-size: 0.9rem; }
+
+        h1 { margin: 0 0 8px 0; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 2px; color: #00ffcc; }
+        .stat { margin: 4px 0; font-size: 0.85rem; color: #ccc; }
         .highlight { color: #ff00ff; font-weight: bold; }
+        
         .menu-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 5px;
-            margin-top: 15px;
+            gap: 6px;
+            margin-top: 12px;
             font-size: 0.8rem;
             color: #aaa;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 10px;
+        }
+
+        /* Toggle Button for Mobile Drawer */
+        #drawer-toggle {
+            display: none;
+            position: absolute;
+            top: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 10, 10, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: none;
+            color: #00ffcc;
+            padding: 6px 20px;
+            border-radius: 8px 8px 0 0;
+            font-size: 0.8rem;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Desktop Layout Rules */
+        @media (min-width: 769px) {
+            #ui-overlay {
+                top: 15px;
+                left: 15px;
+                width: 300px;
+                padding: 20px;
+                border-radius: 12px;
+            }
+        }
+
+        /* Mobile Layout Rules (The Bug Fix) */
+        @media (max-width: 768px) {
+            #webcam {
+                width: 90px;
+                height: 68px;
+                top: 10px;
+                right: 10px;
+            }
+            #ui-overlay {
+                bottom: 0;
+                left: 0;
+                width: 100vw;
+                box-sizing: border-box;
+                padding: 15px 20px 25px 20px;
+                border-radius: 16px 16px 0 0;
+                border-left: none;
+                border-right: none;
+                border-bottom: none;
+                transform: translateY(0); /* Default open slightly or completely */
+            }
+            #ui-overlay.collapsed {
+                transform: translateY(calc(100% - 40px)); /* Hides everything except heading/toggle */
+            }
+            #drawer-toggle {
+                display: block;
+            }
+            .menu-grid {
+                grid-template-columns: 1fr; /* Stack patterns on mobile screens to save room */
+                gap: 4px;
+            }
         }
     </style>
 
@@ -67,10 +134,11 @@
     <video id="webcam" autoplay playsinline></video>
 
     <div id="ui-overlay">
-        <h1>Gesture Particle Engine v2</h1>
-        <div class="stat">Active Shape: <span id="current-shape" class="highlight">Saturn</span></div>
-        <div class="stat">Expansion Factor: <span id="hand-expansion" class="highlight">1.0</span></div>
-        <div class="stat">Rotation Target: <span id="hand-rotation" class="highlight">X: 0, Y: 0</span></div>
+        <button id="drawer-toggle" onclick="toggleDrawer()">▲ Controls</button>
+        <h1>Gesture Engine</h1>
+        <div class="stat">Shape: <span id="current-shape" class="highlight">Saturn</span></div>
+        <div class="stat">Scale: <span id="hand-expansion" class="highlight">1.0</span></div>
+        <div class="stat">Rotation: <span id="hand-rotation" class="highlight">X: 0, Y: 0</span></div>
         
         <div class="menu-grid">
             <div>1 Finger: <span style="color: #fff">Saturn</span></div>
@@ -79,13 +147,17 @@
             <div>4 Fingers: <span style="color: #fff">Fireworks</span></div>
             <div>5 Fingers: <span style="color: #fff">Infinity Loop</span></div>
             <div>Thumb + Pinky: <span style="color: #fff">DNA Helix</span></div>
-            <div>Fist / 0 Fingers: <span style="color: #fff">Tornado</span></div>
+            <div>Fist: <span style="color: #fff">Tornado</span></div>
         </div>
     </div>
 
     <script>
-        // --- 1. GLOBAL SETTINGS & STATE ---
-        const PARTICLE_COUNT = 18000; // Increased particle count for crisper shapes
+        // --- 1. HARDWARE-TARGETED PERFORMANCE TUNING ---
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth <= 768;
+        
+        // Mobile profiles drop total vertices to maintain 60 FPS on mobile GPUs
+        const PARTICLE_COUNT = isMobile ? 6000 : 18000; 
+
         let scene, camera, renderer, particleGeometry, particleSystem;
         let targetPositions = new Float32Array(PARTICLE_COUNT * 3);
         let velocities = new Float32Array(PARTICLE_COUNT * 3);
@@ -95,25 +167,35 @@
         const shapes = ['Saturn', 'Heart', 'Flower', 'Fireworks', 'Infinity Loop', 'DNA Helix', 'Tornado'];
         
         let globalExpansion = 1.0;
-        let targetRotationX = 0;
-        let targetRotationY = 0;
+        let targetRotationX = 0, targetRotationY = 0;
         let baseColor = new THREE.Color(0x00ffcc);
 
-        // --- 2. MATHEMATICAL SHAPE TEMPLATES ---
-        
+        // UI Mobile Toggle Logic
+        function toggleDrawer() {
+            const overlay = document.getElementById('ui-overlay');
+            const btn = document.getElementById('drawer-toggle');
+            overlay.classList.toggle('collapsed');
+            if(overlay.classList.contains('collapsed')) {
+                btn.innerText = "▲ Controls";
+            } else {
+                btn.innerText = "▼ Hide";
+            }
+        }
+
+        // --- 2. GENERATION ALGORITHMS ---
         function getSaturnPosition(i, target) {
             if (i < PARTICLE_COUNT * 0.4) {
-                const u = Math.random(); const v = Math.random();
-                const theta = u * 2.0 * Math.PI; const phi = Math.acos(2.0 * v - 1.0);
-                const r = 1.5 + Math.random() * 0.2;
+                const u = Math.random(), v = Math.random();
+                const theta = u * 2.0 * Math.PI, phi = Math.acos(2.0 * v - 1.0);
+                const r = 1.4 + Math.random() * 0.2;
                 target[i * 3] = r * Math.sin(phi) * Math.cos(theta);
                 target[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
                 target[i * 3 + 2] = r * Math.cos(phi);
             } else {
                 const theta = Math.random() * Math.PI * 2;
-                const r = 2.5 + Math.random() * 2.5;
+                const r = 2.2 + Math.random() * 2.2;
                 target[i * 3] = r * Math.cos(theta);
-                target[i * 3 + 1] = (Math.random() - 0.5) * 0.15;
+                target[i * 3 + 1] = (Math.random() - 0.5) * 0.12;
                 target[i * 3 + 2] = r * Math.sin(theta);
             }
         }
@@ -123,84 +205,65 @@
             const phi = Math.PI * (Math.random() - 0.5);
             const x = 16 * Math.pow(Math.sin(t), 3);
             const y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
-            const z = phi * 5;
-            target[i * 3] = x * 0.2; target[i * 3 + 1] = y * 0.2; target[i * 3 + 2] = z * 0.2;
+            target[i * 3] = x * 0.18; target[i * 3 + 1] = y * 0.18; target[i * 3 + 2] = phi * 0.8;
         }
 
         function getFlowerPosition(i, target) {
             const phi = i * 137.5 * (Math.PI / 180);
-            const r = Math.sqrt(i) / Math.sqrt(PARTICLE_COUNT) * 4;
-            const zMod = Math.sin(phi * 6) * 0.8 * r;
-            target[i * 3] = r * Math.cos(phi); target[i * 3 + 1] = zMod; target[i * 3 + 2] = r * Math.sin(phi);
+            const r = Math.sqrt(i) / Math.sqrt(PARTICLE_COUNT) * 3.8;
+            target[i * 3] = r * Math.cos(phi); target[i * 3 + 1] = Math.sin(phi * 6) * 0.6 * r; target[i * 3 + 2] = r * Math.sin(phi);
         }
 
         function getFireworksPosition(i, target) {
-            const totalStreaks = 80;
+            const totalStreaks = isMobile ? 30 : 70;
             const streakId = i % totalStreaks;
             const theta = (streakId / totalStreaks) * Math.PI * 2;
             const phi = Math.acos((Math.random() * 2) - 1);
-            const speed = 2.0 + Math.random() * 5.0; 
+            const speed = 1.8 + Math.random() * 4.5; 
             target[i * 3] = speed * Math.sin(phi) * Math.cos(theta);
             target[i * 3 + 1] = speed * Math.sin(phi) * Math.sin(theta);
             target[i * 3 + 2] = speed * Math.cos(phi);
         }
 
-        // NEW SHAPE 4: Infinity Loop (Lemniscate of Gerono with Z depth)
         function getInfinityPosition(i, target) {
-            const t = (i / PARTICLE_COUNT) * Math.PI * 2 * 20; // Multiple loops wrap the distribution
-            const scale = 4.5;
-            // Mathematical lemniscate geometry
+            const t = (i / PARTICLE_COUNT) * Math.PI * 2 * 15;
+            const scale = 4.0;
             target[i * 3] = scale * Math.sin(t);
             target[i * 3 + 1] = scale * Math.sin(t) * Math.cos(t);
-            // Spread thickness cleanly via random variance
-            target[i * 3 + 2] = (Math.random() - 0.5) * 1.5 + Math.cos(t) * 0.5;
+            target[i * 3 + 2] = (Math.random() - 0.5) * 1.0 + Math.cos(t) * 0.4;
         }
 
-        // NEW SHAPE 5: DNA Double Helix
         function getDNAPosition(i, target) {
-            const strand = i % 2; // Split particles between 2 main spiraling backbone strands
-            const t = (i / PARTICLE_COUNT) * Math.PI * 12; // Length of the helix strand
-            const radius = 2.0;
-            const pitch = 0.25; // Vertical speed stretch
-
-            if (i % 15 === 0) { 
-                // Dedicate some particles to build the inner crossing "base-pair rungs"
+            const strand = i % 2;
+            const t = (i / PARTICLE_COUNT) * Math.PI * 10;
+            const radius = 1.8;
+            const pitch = 0.3;
+            if (i % 12 === 0) {
                 const linkPercent = Math.random();
                 const angle = t + (strand * Math.PI);
-                const x1 = radius * Math.cos(angle);
-                const z1 = radius * Math.sin(angle);
-                const x2 = radius * Math.cos(angle + Math.PI);
-                const z2 = radius * Math.sin(angle + Math.PI);
-                
-                target[i * 3] = THREE.MathUtils.lerp(x1, x2, linkPercent);
-                target[i * 3 + 1] = (t * pitch) - 4.5;
-                target[i * 3 + 2] = THREE.MathUtils.lerp(z1, z2, linkPercent);
+                target[i * 3] = THREE.MathUtils.lerp(radius * Math.cos(angle), radius * Math.cos(angle + Math.PI), linkPercent);
+                target[i * 3 + 1] = (t * pitch) - 4.0;
+                target[i * 3 + 2] = THREE.MathUtils.lerp(radius * Math.sin(angle), radius * Math.sin(angle + Math.PI), linkPercent);
             } else {
-                // Outer main strands
                 const angle = t + (strand * Math.PI);
-                target[i * 3] = radius * Math.cos(angle) + (Math.random() - 0.5) * 0.2;
-                target[i * 3 + 1] = (t * pitch) - 4.5; // Centers helix on screen Y axis
-                target[i * 3 + 2] = radius * Math.sin(angle) + (Math.random() - 0.5) * 0.2;
+                target[i * 3] = radius * Math.cos(angle) + (Math.random() - 0.5) * 0.15;
+                target[i * 3 + 1] = (t * pitch) - 4.0;
+                target[i * 3 + 2] = radius * Math.sin(angle) + (Math.random() - 0.5) * 0.15;
             }
         }
 
-        // NEW SHAPE 6: Tornado Vortex
         function getTornadoPosition(i, target) {
-            const height = (i / PARTICLE_COUNT) * 9.0; // Total vertical height tracking
-            // Top is wide, bottom tapers down to a sharp funnel point
-            const radius = (height * 0.5) + 0.2; 
-            const angle = height * 5.0 + (Math.random() * Math.PI);
-
+            const height = (i / PARTICLE_COUNT) * 8.0;
+            const radius = (height * 0.45) + 0.15; 
+            const angle = height * 4.5 + (Math.random() * Math.PI);
             target[i * 3] = radius * Math.cos(angle);
-            target[i * 3 + 1] = height - 4.5; // Offset to center vertically
+            target[i * 3 + 1] = height - 4.0;
             target[i * 3 + 2] = radius * Math.sin(angle);
         }
 
-        // Master Controller for Smooth Swapping 
         function transitionToShape(shapeIndex) {
             currentShapeIndex = shapeIndex;
             document.getElementById('current-shape').innerText = shapes[shapeIndex];
-            
             const tempTargets = new Float32Array(PARTICLE_COUNT * 3);
             
             for(let i = 0; i < PARTICLE_COUNT; i++) {
@@ -218,29 +281,27 @@
             }
         }
 
-        // --- 3. INITIALIZE THREE.JS ---
+        // --- 3. THREE.JS INITIALIZATION ---
         function initThree() {
             const container = document.getElementById('canvas-container');
             scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x000000, 0.04);
+            scene.fog = new THREE.FogExp2(0x000000, 0.05);
 
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
-            camera.position.z = 12;
+            camera.position.z = isMobile ? 14 : 11; // Pull camera back slightly on narrow mobile viewports
 
-            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer = new THREE.WebGLRenderer({ antialias: !isMobile, powerPreference: "high-performance" });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             container.appendChild(renderer.domElement);
 
             particleGeometry = new THREE.BufferGeometry();
             const initialPositions = new Float32Array(PARTICLE_COUNT * 3);
-
             for(let i=0; i<PARTICLE_COUNT * 3; i++) {
-                initialPositions[i] = (Math.random() - 0.5) * 25;
+                initialPositions[i] = (Math.random() - 0.5) * 20;
                 targetPositions[i] = initialPositions[i];
                 colors[i] = Math.random();
             }
-
             particleGeometry.setAttribute('position', new THREE.BufferAttribute(initialPositions, 3));
             particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
@@ -251,11 +312,10 @@
             grad.addColorStop(0, 'rgba(255,255,255,1)');
             grad.addColorStop(1, 'rgba(255,255,255,0)');
             ctx.fillStyle = grad; ctx.fillRect(0,0,16,16);
-            const pTexture = new THREE.CanvasTexture(pCanvas);
-
+            
             const particleMaterial = new THREE.PointsMaterial({
-                size: 0.07,
-                map: pTexture,
+                size: isMobile ? 0.12 : 0.065, // Increase scale sizing slightly on mobile to balance less dots
+                map: new THREE.CanvasTexture(pCanvas),
                 blending: THREE.AdditiveBlending,
                 depthWrite: false,
                 transparent: true,
@@ -267,6 +327,9 @@
 
             transitionToShape(0);
             window.addEventListener('resize', onWindowResize);
+            
+            // Auto-collapse drawer on mobile devices instantly after load sequence
+            if(isMobile) setTimeout(toggleDrawer, 1500);
         }
 
         function onWindowResize() {
@@ -275,35 +338,26 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        // --- 4. ADVANCED GESTURE DETECTION ---
-        const videoElement = document.getElementById('webcam');
-        
+        // --- 4. GESTURE TRACKING PIPELINE ---
         function onHandResults(results) {
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 const hand = results.multiHandLandmarks[0];
-
-                // Color engine tracking
                 const wrist = hand[0];
+                
                 baseColor.setHSL(wrist.x, 0.9, 0.5);
-
-                // Rotational tracking mapping
-                targetRotationY = (wrist.x - 0.5) * 4.5;
-                targetRotationX = (wrist.y - 0.5) * 4.5;
+                targetRotationY = (wrist.x - 0.5) * 4.0;
+                targetRotationX = (wrist.y - 0.5) * 4.0;
                 document.getElementById('hand-rotation').innerText = `X: ${targetRotationX.toFixed(1)}, Y: ${targetRotationY.toFixed(1)}`;
 
-                // Hand spatial size metrics (distance thumb-tip to pinky-tip)
-                const dist = Math.sqrt(
-                    Math.pow(hand[4].x - hand[20].x, 2) + Math.pow(hand[4].y - hand[20].y, 2)
-                );
-                globalExpansion = THREE.MathUtils.lerp(globalExpansion, 0.4 + dist * 4.5, 0.1);
+                const dist = Math.sqrt(Math.pow(hand[4].x - hand[20].x, 2) + Math.pow(hand[4].y - hand[20].y, 2));
+                globalExpansion = THREE.MathUtils.lerp(globalExpansion, 0.4 + dist * 4.5, 0.15);
                 document.getElementById('hand-expansion').innerText = globalExpansion.toFixed(2);
 
-                // Tracking extended fingers status
                 const isIndexUp = hand[8].y < hand[6].y;
                 const isMiddleUp = hand[12].y < hand[10].y;
                 const isRingUp = hand[16].y < hand[14].y;
                 const isPinkyUp = hand[20].y < hand[18].y;
-                const isThumbUp = hand[4].x > hand[3].x; // Crude check for extended thumb
+                const isThumbUp = hand[4].x > hand[3].x;
 
                 let extendedCount = 0;
                 if (isIndexUp) extendedCount++;
@@ -311,87 +365,61 @@
                 if (isRingUp) extendedCount++;
                 if (isPinkyUp) extendedCount++;
 
-                // --- EXTENDED GESTURE DICTIONARY ---
                 let detectedShape = currentShapeIndex;
-
-                if (extendedCount === 0) {
-                    detectedShape = 6; // Closed Fist -> Tornado
-                } else if (extendedCount === 1) {
-                    detectedShape = 0; // 1 Finger -> Saturn
-                } else if (extendedCount === 2) {
-                    detectedShape = 1; // 2 Fingers -> Heart
-                } else if (extendedCount === 3) {
-                    detectedShape = 2; // 3 Fingers -> Flower
-                } else if (extendedCount === 4 && !isThumbUp) {
-                    detectedShape = 3; // 4 Fingers -> Fireworks
-                } else if (extendedCount === 4 && isThumbUp) {
-                    detectedShape = 4; // 5 Fingers Wide -> Infinity Loop
-                } 
+                if (extendedCount === 0) detectedShape = 6;
+                else if (extendedCount === 1) detectedShape = 0;
+                else if (extendedCount === 2) detectedShape = 1;
+                else if (extendedCount === 3) detectedShape = 2;
+                else if (extendedCount === 4 && !isThumbUp) detectedShape = 3;
+                else if (extendedCount === 4 && isThumbUp) detectedShape = 4;
                 
-                // Specific Gesture Shortcut: Horns / Open End Points (Thumb + Pinky up, inner down)
-                if (isPinkyUp && isThumbUp && !isIndexUp && !isMiddleUp) {
-                    detectedShape = 5; // Spreading Ends -> DNA Double Helix
-                }
+                if (isPinkyUp && isThumbUp && !isIndexUp && !isMiddleUp) detectedShape = 5;
 
-                if (detectedShape !== currentShapeIndex) {
-                    transitionToShape(detectedShape);
-                }
+                if (detectedShape !== currentShapeIndex) transitionToShape(detectedShape);
             }
         }
 
-        // Initialize Tracking Runtime
-        const hands = new Hands({
-            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
-        });
-        hands.setOptions({
-            maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6
-        });
+        const hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
+        hands.setOptions({ maxNumHands: 1, modelComplexity: isMobile ? 0 : 1, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
         hands.onResults(onHandResults);
 
+        const videoElement = document.getElementById('webcam');
         const cameraFeed = new Camera(videoElement, {
             onFrame: async () => { await hands.send({ image: videoElement }); },
-            width: 640, height: 480
+            width: isMobile ? 320 : 640,
+            height: isMobile ? 240 : 480
         });
         cameraFeed.start();
 
-        // --- 5. PHYSICS RENDER LOOP ---
+        // --- 5. LOOP ---
         function animate() {
             requestAnimationFrame(animate);
 
             const positions = particleGeometry.attributes.position.array;
             const colorAttribute = particleGeometry.attributes.color.array;
 
-            // Move system towards tracked orientation coordinates
             particleSystem.rotation.y += (targetRotationY - particleSystem.rotation.y) * 0.05;
             particleSystem.rotation.x += (targetRotationX - particleSystem.rotation.x) * 0.05;
+            particleSystem.rotation.y += currentShapeIndex === 6 ? 0.04 : 0.003;
 
-            // Subtle continuous rotational spin
-            if (currentShapeIndex === 6) {
-                particleSystem.rotation.y += 0.04; // Spin Tornado super fast!
-            } else {
-                particleSystem.rotation.y += 0.003; 
-            }
+            // Step optimization: Interpolate coordinates using localized step configurations
+            const interpolationSpeed = isMobile ? 0.12 : 0.07; // Snappier logic rendering on fewer mobile points
 
             for (let i = 0; i < PARTICLE_COUNT; i++) {
                 const i3 = i * 3;
+                const tx = targetPositions[i3] * globalExpansion;
+                const ty = targetPositions[i3 + 1] * globalExpansion;
+                const tz = targetPositions[i3 + 2] * globalExpansion;
 
-                // Physics target calculation including current scalar explosion values
-                const currentTargetX = targetPositions[i3] * globalExpansion;
-                const currentTargetY = targetPositions[i3 + 1] * globalExpansion;
-                const currentTargetZ = targetPositions[i3 + 2] * globalExpansion;
+                positions[i3] += (tx - positions[i3]) * interpolationSpeed;
+                positions[i3 + 1] += (ty - positions[i3 + 1]) * interpolationSpeed;
+                positions[i3 + 2] += (tz - positions[i3 + 2]) * interpolationSpeed;
 
-                // Elastic drag coefficient
-                positions[i3] += (currentTargetX - positions[i3]) * 0.07;
-                positions[i3 + 1] += (currentTargetY - positions[i3 + 1]) * 0.07;
-                positions[i3 + 2] += (currentTargetZ - positions[i3 + 2]) * 0.07;
-
-                // Color Mapping Adjustments per Shape
                 const pColor = baseColor.clone();
                 if (currentShapeIndex === 5) {
-                    // Give DNA Backbones a alternating color alternating spectrum
                     pColor.offsetHSL((i % 2 === 0 ? 0.3 : 0.7), 0, 0);
                 } else if(currentShapeIndex === 3) {
-                    pColor.offsetHSL((i % 12 * 0.08), 0, 0); 
+                    pColor.offsetHSL((i % 12 * 0.08), 0, 0);
                 } else {
                     pColor.offsetHSL((positions[i3] * 0.02), 0, 0);
                 }
@@ -403,7 +431,6 @@
 
             particleGeometry.attributes.position.needsUpdate = true;
             particleGeometry.attributes.color.needsUpdate = true;
-
             renderer.render(scene, camera);
         }
 
