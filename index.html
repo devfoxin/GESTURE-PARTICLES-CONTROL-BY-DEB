@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Responsive 3D Hand Particle System</title>
+    <title>Advanced 3D Hand Particle System v3</title>
     <style>
         body {
             margin: 0;
@@ -35,7 +35,6 @@
             background: #111;
         }
         
-        /* --- RESPONSIVE RESPONSIVE UI OVERLAY --- */
         #ui-overlay {
             position: absolute;
             color: white;
@@ -62,7 +61,6 @@
             padding-top: 10px;
         }
 
-        /* Toggle Button for Mobile Drawer */
         #drawer-toggle {
             display: none;
             position: absolute;
@@ -80,7 +78,6 @@
             backdrop-filter: blur(10px);
         }
 
-        /* Desktop Layout Rules */
         @media (min-width: 769px) {
             #ui-overlay {
                 top: 15px;
@@ -91,7 +88,6 @@
             }
         }
 
-        /* Mobile Layout Rules (The Bug Fix) */
         @media (max-width: 768px) {
             #webcam {
                 width: 90px;
@@ -109,16 +105,16 @@
                 border-left: none;
                 border-right: none;
                 border-bottom: none;
-                transform: translateY(0); /* Default open slightly or completely */
+                transform: translateY(0);
             }
             #ui-overlay.collapsed {
-                transform: translateY(calc(100% - 40px)); /* Hides everything except heading/toggle */
+                transform: translateY(calc(100% - 40px));
             }
             #drawer-toggle {
                 display: block;
             }
             .menu-grid {
-                grid-template-columns: 1fr; /* Stack patterns on mobile screens to save room */
+                grid-template-columns: 1fr;
                 gap: 4px;
             }
         }
@@ -135,7 +131,7 @@
 
     <div id="ui-overlay">
         <button id="drawer-toggle" onclick="toggleDrawer()">▲ Controls</button>
-        <h1>Gesture Engine</h1>
+        <h1>Gesture Engine v3</h1>
         <div class="stat">Shape: <span id="current-shape" class="highlight">Saturn</span></div>
         <div class="stat">Scale: <span id="hand-expansion" class="highlight">1.0</span></div>
         <div class="stat">Rotation: <span id="hand-rotation" class="highlight">X: 0, Y: 0</span></div>
@@ -148,15 +144,15 @@
             <div>5 Fingers: <span style="color: #fff">Infinity Loop</span></div>
             <div>Thumb + Pinky: <span style="color: #fff">DNA Helix</span></div>
             <div>Fist: <span style="color: #fff">Tornado</span></div>
-        </div>
+            <div>Middle Finger: <span style="color: #fff">Text</span></div> </div>
     </div>
 
     <script>
         // --- 1. HARDWARE-TARGETED PERFORMANCE TUNING ---
         const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth <= 768;
         
-        // Mobile profiles drop total vertices to maintain 60 FPS on mobile GPUs
-        const PARTICLE_COUNT = isMobile ? 6000 : 18000; 
+        // Increased for text resolution, but still optimized. Text uses about 4k points minimum.
+        const PARTICLE_COUNT = isMobile ? 8000 : 22000; 
 
         let scene, camera, renderer, particleGeometry, particleSystem;
         let targetPositions = new Float32Array(PARTICLE_COUNT * 3);
@@ -164,13 +160,12 @@
         let colors = new Float32Array(PARTICLE_COUNT * 3);
         
         let currentShapeIndex = 0;
-        const shapes = ['Saturn', 'Heart', 'Flower', 'Fireworks', 'Infinity Loop', 'DNA Helix', 'Tornado'];
+        const shapes = ['Saturn', 'Heart', 'Flower', 'Fireworks', 'Infinity Loop', 'DNA Helix', 'Tornado', 'Same to You']; // Added New Shape
         
         let globalExpansion = 1.0;
         let targetRotationX = 0, targetRotationY = 0;
         let baseColor = new THREE.Color(0x00ffcc);
 
-        // UI Mobile Toggle Logic
         function toggleDrawer() {
             const overlay = document.getElementById('ui-overlay');
             const btn = document.getElementById('drawer-toggle');
@@ -183,6 +178,7 @@
         }
 
         // --- 2. GENERATION ALGORITHMS ---
+        // Basic shapes optimized for responsive count.
         function getSaturnPosition(i, target) {
             if (i < PARTICLE_COUNT * 0.4) {
                 const u = Math.random(), v = Math.random();
@@ -215,7 +211,7 @@
         }
 
         function getFireworksPosition(i, target) {
-            const totalStreaks = isMobile ? 30 : 70;
+            const totalStreaks = isMobile ? 40 : 100;
             const streakId = i % totalStreaks;
             const theta = (streakId / totalStreaks) * Math.PI * 2;
             const phi = Math.acos((Math.random() * 2) - 1);
@@ -261,6 +257,57 @@
             target[i * 3 + 2] = radius * Math.sin(angle);
         }
 
+        // --- NEW TEXT SHAPE: Same to You ---
+        let textPoints = null; // Will cache text sample points
+
+        function generateTextPoints() {
+            if(textPoints) return; // Prevent recreation
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 512;
+            canvas.height = 256; // Landscape area for text
+
+            // Render text onto hidden canvas
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 80px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('SAME', canvas.width/2, 60);
+            ctx.fillText('TO', canvas.width/2, 128);
+            ctx.fillText('YOU', canvas.width/2, 196);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const sampled = [];
+
+            // Scan canvas and create point data
+            for (let y = 0; y < canvas.height; y += 3) { // Step is quality/performance trade-off
+                for (let x = 0; x < canvas.width; x += 3) {
+                    const index = (y * canvas.width + x) * 4;
+                    if (imageData.data[index] > 128) { // If pixel is white
+                        sampled.push({
+                            x: (x - canvas.width / 2) * 0.045, // Scale to Three.js space
+                            y: (canvas.height / 2 - y) * 0.045,
+                            z: (Math.random() - 0.5) * 0.2 // Slight depth variance
+                        });
+                    }
+                }
+            }
+            textPoints = sampled;
+        }
+
+        function getTextPosition(i, target) {
+            generateTextPoints(); // Ensure text is sampled
+            const pointCount = textPoints.length;
+            
+            // Map particles to text points, looping if necessary
+            const p = textPoints[i % pointCount];
+            target[i * 3] = p.x;
+            target[i * 3 + 1] = p.y;
+            target[i * 3 + 2] = p.z;
+        }
+
+        // --- Master Transition Controller ---
         function transitionToShape(shapeIndex) {
             currentShapeIndex = shapeIndex;
             document.getElementById('current-shape').innerText = shapes[shapeIndex];
@@ -274,6 +321,7 @@
                 else if(shapeIndex === 4) getInfinityPosition(i, tempTargets);
                 else if(shapeIndex === 5) getDNAPosition(i, tempTargets);
                 else if(shapeIndex === 6) getTornadoPosition(i, tempTargets);
+                else if(shapeIndex === 7) getTextPosition(i, tempTargets); // New Text Shape
                 
                 targetPositions[i*3] = tempTargets[i*3];
                 targetPositions[i*3+1] = tempTargets[i*3+1];
@@ -288,7 +336,7 @@
             scene.fog = new THREE.FogExp2(0x000000, 0.05);
 
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
-            camera.position.z = isMobile ? 14 : 11; // Pull camera back slightly on narrow mobile viewports
+            camera.position.z = isMobile ? 16 : 12; // Pull camera back for wider view
 
             renderer = new THREE.WebGLRenderer({ antialias: !isMobile, powerPreference: "high-performance" });
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -314,7 +362,7 @@
             ctx.fillStyle = grad; ctx.fillRect(0,0,16,16);
             
             const particleMaterial = new THREE.PointsMaterial({
-                size: isMobile ? 0.12 : 0.065, // Increase scale sizing slightly on mobile to balance less dots
+                size: isMobile ? 0.12 : 0.07, // Balanced particle size
                 map: new THREE.CanvasTexture(pCanvas),
                 blending: THREE.AdditiveBlending,
                 depthWrite: false,
@@ -325,10 +373,12 @@
             particleSystem = new THREE.Points(particleGeometry, particleMaterial);
             scene.add(particleSystem);
 
+            // Pre-cache text points for faster switching
+            generateTextPoints();
+
             transitionToShape(0);
             window.addEventListener('resize', onWindowResize);
             
-            // Auto-collapse drawer on mobile devices instantly after load sequence
             if(isMobile) setTimeout(toggleDrawer, 1500);
         }
 
@@ -338,7 +388,7 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        // --- 4. GESTURE TRACKING PIPELINE ---
+        // --- 4. GESTURE TRACKING PIPELINE (UPDATED FOR MIDDLE FINGER) ---
         function onHandResults(results) {
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 const hand = results.multiHandLandmarks[0];
@@ -353,11 +403,11 @@
                 globalExpansion = THREE.MathUtils.lerp(globalExpansion, 0.4 + dist * 4.5, 0.15);
                 document.getElementById('hand-expansion').innerText = globalExpansion.toFixed(2);
 
+                const isThumbUp = hand[4].x > hand[3].x; // Simple thumb check
                 const isIndexUp = hand[8].y < hand[6].y;
                 const isMiddleUp = hand[12].y < hand[10].y;
                 const isRingUp = hand[16].y < hand[14].y;
                 const isPinkyUp = hand[20].y < hand[18].y;
-                const isThumbUp = hand[4].x > hand[3].x;
 
                 let extendedCount = 0;
                 if (isIndexUp) extendedCount++;
@@ -366,14 +416,30 @@
                 if (isPinkyUp) extendedCount++;
 
                 let detectedShape = currentShapeIndex;
-                if (extendedCount === 0) detectedShape = 6;
-                else if (extendedCount === 1) detectedShape = 0;
-                else if (extendedCount === 2) detectedShape = 1;
-                else if (extendedCount === 3) detectedShape = 2;
-                else if (extendedCount === 4 && !isThumbUp) detectedShape = 3;
-                else if (extendedCount === 4 && isThumbUp) detectedShape = 4;
+
+                // --- GESTURE DICTIONARY UPDATE ---
                 
-                if (isPinkyUp && isThumbUp && !isIndexUp && !isMiddleUp) detectedShape = 5;
+                // Specific Gesture: Middle Finger Check
+                if(isMiddleUp && !isIndexUp && !isRingUp && !isPinkyUp) {
+                    detectedShape = 7; // Text Shape
+                } else if (extendedCount === 0) {
+                    detectedShape = 6; // Fist
+                } else if (extendedCount === 1) {
+                    detectedShape = 0; // 1 Finger
+                } else if (extendedCount === 2) {
+                    detectedShape = 1; // 2 Fingers
+                } else if (extendedCount === 3) {
+                    detectedShape = 2; // 3 Fingers
+                } else if (extendedCount === 4 && !isThumbUp) {
+                    detectedShape = 3; // 4 Fingers
+                } else if (extendedCount === 4 && isThumbUp) {
+                    detectedShape = 4; // 5 Fingers
+                }
+                
+                // Shortcut Specific Gesture: DNA Helix
+                if (isPinkyUp && isThumbUp && !isIndexUp && !isMiddleUp) {
+                    detectedShape = 5;
+                }
 
                 if (detectedShape !== currentShapeIndex) transitionToShape(detectedShape);
             }
@@ -400,10 +466,13 @@
 
             particleSystem.rotation.y += (targetRotationY - particleSystem.rotation.y) * 0.05;
             particleSystem.rotation.x += (targetRotationX - particleSystem.rotation.x) * 0.05;
-            particleSystem.rotation.y += currentShapeIndex === 6 ? 0.04 : 0.003;
+            
+            // Spinning rules based on shape
+            if(currentShapeIndex === 6) particleSystem.rotation.y += 0.04; // Tornado spin
+            else if(currentShapeIndex === 7) {} // Text stays steady
+            else particleSystem.rotation.y += 0.003; // Default spin
 
-            // Step optimization: Interpolate coordinates using localized step configurations
-            const interpolationSpeed = isMobile ? 0.12 : 0.07; // Snappier logic rendering on fewer mobile points
+            const interpolationSpeed = isMobile ? 0.12 : 0.07; // Snappier rendering for few points
 
             for (let i = 0; i < PARTICLE_COUNT; i++) {
                 const i3 = i * 3;
@@ -415,11 +484,15 @@
                 positions[i3 + 1] += (ty - positions[i3 + 1]) * interpolationSpeed;
                 positions[i3 + 2] += (tz - positions[i3 + 2]) * interpolationSpeed;
 
+                // Color Rules
                 const pColor = baseColor.clone();
-                if (currentShapeIndex === 5) {
+                if (currentShapeIndex === 5) { // DNA Helix
                     pColor.offsetHSL((i % 2 === 0 ? 0.3 : 0.7), 0, 0);
-                } else if(currentShapeIndex === 3) {
+                } else if(currentShapeIndex === 3) { // Fireworks
                     pColor.offsetHSL((i % 12 * 0.08), 0, 0);
+                } else if(currentShapeIndex === 7) { // Text
+                    // Give text a subtle vertical gradient shift
+                    pColor.offsetHSL(positions[i3 + 1] * 0.015, 0, 0);
                 } else {
                     pColor.offsetHSL((positions[i3] * 0.02), 0, 0);
                 }
