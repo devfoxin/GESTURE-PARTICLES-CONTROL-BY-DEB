@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Advanced 3D Hand Particle System v3.2</title>
+    <title>Advanced 3D Hand Particle System v3.3</title>
     <style>
         body {
             margin: 0;
@@ -131,7 +131,7 @@
 
     <div id="ui-overlay">
         <button id="drawer-toggle" onclick="toggleDrawer()">▲ Controls</button>
-        <h1>Gesture Engine v3.2</h1>
+        <h1>Gesture Engine v3.3</h1>
         <div class="stat">Shape: <span id="current-shape" class="highlight">Saturn</span></div>
         <div class="stat">Scale: <span id="hand-expansion" class="highlight">1.0</span></div>
         <div class="stat">Rotation: <span id="hand-rotation" class="highlight">X: 0, Y: 0</span></div>
@@ -194,7 +194,6 @@
             }
         }
 
-        // FIX: Realigned equation vectors so the flat front face of the heart looks directly down the Z-axis at the camera
         function getHeartPosition(i, target) {
             const t = Math.PI * (2 * Math.random() - 1);
             const phi = Math.PI * (Math.random() - 0.5);
@@ -203,8 +202,8 @@
             const y = (13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
             
             target[i * 3] = x * 0.18; 
-            target[i * 3 + 1] = y * 0.18 + 0.3; // Centered upright elevation
-            target[i * 3 + 2] = phi * 0.5;      // Shallow depth distribution
+            target[i * 3 + 1] = y * 0.18 + 0.3; 
+            target[i * 3 + 2] = phi * 0.4;      
         }
 
         function getFlowerPosition(i, target) {
@@ -226,12 +225,13 @@
             target[i * 3 + 2] = speed * Math.cos(phi);
         }
 
+        // FIX: Realigned Infinity Loop onto standard XY frontal projection plane
         function getInfinityPosition(i, target) {
-            const t = (i / PARTICLE_COUNT) * Math.PI * 2 * 15;
+            const t = (i / PARTICLE_COUNT) * Math.PI * 2 * 6;
             const scale = 4.0;
             target[i * 3] = scale * Math.sin(t);
             target[i * 3 + 1] = scale * Math.sin(t) * Math.cos(t);
-            target[i * 3 + 2] = (Math.random() - 0.5) * 1.0 + Math.cos(t) * 0.4;
+            target[i * 3 + 2] = (Math.random() - 0.5) * 0.3;
         }
 
         function getDNAPosition(i, target) {
@@ -290,7 +290,6 @@
                     if (imageData.data[index] > 128) {
                         sampled.push({
                             x: (x - canvas.width / 2) * 0.045,
-                            // FIX: Realigned canvas grid space projection inversion limits
                             y: -(y - canvas.height / 2) * 0.045, 
                             z: (Math.random() - 0.5) * 0.1 
                         });
@@ -337,8 +336,6 @@
             scene.fog = new THREE.FogExp2(0x000000, 0.05);
 
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
-            
-            // FIX: Repositioned camera directly flush along the horizon line (Y = 0) looking straight forward down Z
             camera.position.set(0, 0, isMobile ? 15 : 11);
             camera.lookAt(0, 0, 0);
 
@@ -398,7 +395,7 @@
                 
                 baseColor.setHSL(wrist.x, 0.9, 0.5);
                 
-                // FIX: Stabilized rotation values and inverted pitch tracking directionality ($X$ mapping values)
+                // Track orientation values
                 targetRotationY = (wrist.x - 0.5) * 3.5;
                 targetRotationX = -(wrist.y - 0.5) * 2.5; 
                 
@@ -465,15 +462,20 @@
             const positions = particleGeometry.attributes.position.array;
             const colorAttribute = particleGeometry.attributes.color.array;
 
-            // Smooth interpolation to target hand tracking offsets
-            particleSystem.rotation.y += (targetRotationY - particleSystem.rotation.y) * 0.05;
-            particleSystem.rotation.x += (targetRotationX - particleSystem.rotation.x) * 0.05;
-            
-            if(currentShapeIndex === 6) particleSystem.rotation.y += 0.04; 
-            else if(currentShapeIndex === 1 || currentShapeIndex === 7) {
-                // Heart and text remain facing forward without automatic passive spinning
+            // FIX: If shape is Heart (1) or Text (7), forcefully slide rotation targets back to 0 so they remain perfectly front-facing
+            if (currentShapeIndex === 1 || currentShapeIndex === 7) {
+                particleSystem.rotation.y += (0 - particleSystem.rotation.y) * 0.1;
+                particleSystem.rotation.x += (0 - particleSystem.rotation.x) * 0.1;
             } else {
-                particleSystem.rotation.y += 0.003; 
+                // Other shapes smoothly follow hand coordinate modifications
+                particleSystem.rotation.y += (targetRotationY - particleSystem.rotation.y) * 0.05;
+                particleSystem.rotation.x += (targetRotationX - particleSystem.rotation.x) * 0.05;
+                
+                if(currentShapeIndex === 6) {
+                    particleSystem.rotation.y += 0.04; // Fast Tornado spin
+                } else {
+                    particleSystem.rotation.y += 0.003; // Default continuous spin
+                }
             }
 
             const interpolationSpeed = isMobile ? 0.12 : 0.07;
