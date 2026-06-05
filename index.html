@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Advanced 3D Hand Particle System v3.3</title>
+    <title>Advanced 3D Hand Particle System v3.4</title>
     <style>
         body {
             margin: 0;
@@ -131,7 +131,7 @@
 
     <div id="ui-overlay">
         <button id="drawer-toggle" onclick="toggleDrawer()">▲ Controls</button>
-        <h1>Gesture Engine v3.3</h1>
+        <h1>Gesture Engine v3.4</h1>
         <div class="stat">Shape: <span id="current-shape" class="highlight">Saturn</span></div>
         <div class="stat">Scale: <span id="hand-expansion" class="highlight">1.0</span></div>
         <div class="stat">Rotation: <span id="hand-rotation" class="highlight">X: 0, Y: 0</span></div>
@@ -140,7 +140,7 @@
             <div>1 Finger: <span style="color: #fff">Saturn</span></div>
             <div>2 Fingers: <span style="color: #fff">Heart</span></div>
             <div>3 Fingers: <span style="color: #fff">Flower</span></div>
-            <div>4 Fingers: <span style="color: #fff">Fireworks</span></div>
+            <div>4 Fingers: <span style="color: #fff">Galaxy</span></div>
             <div>5 Fingers: <span style="color: #fff">Infinity Loop</span></div>
             <div>Thumb + Pinky: <span style="color: #fff">DNA Helix</span></div>
             <div>Fist: <span style="color: #fff">Tornado</span></div>
@@ -151,15 +151,14 @@
     <script>
         // --- 1. SETTINGS & PERFORMANCE TUNING ---
         const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth <= 768;
-        const PARTICLE_COUNT = isMobile ? 8000 : 22000; 
+        const PARTICLE_COUNT = isMobile ? 10000 : 25000; // Increased count for starry density
 
         let scene, camera, renderer, particleGeometry, particleSystem;
         let targetPositions = new Float32Array(PARTICLE_COUNT * 3);
-        let velocities = new Float32Array(PARTICLE_COUNT * 3);
         let colors = new Float32Array(PARTICLE_COUNT * 3);
         
         let currentShapeIndex = 0;
-        const shapes = ['Saturn', 'Heart', 'Flower', 'Fireworks', 'Infinity Loop', 'DNA Helix', 'Tornado', 'Same to You'];
+        const shapes = ['Saturn', 'Heart', 'Flower', 'Galaxy', 'Infinity Loop', 'DNA Helix', 'Tornado', 'Same to You'];
         
         let globalExpansion = 1.0;
         let targetRotationX = 0, targetRotationY = 0;
@@ -197,10 +196,8 @@
         function getHeartPosition(i, target) {
             const t = Math.PI * (2 * Math.random() - 1);
             const phi = Math.PI * (Math.random() - 0.5);
-            
             const x = 16 * Math.pow(Math.sin(t), 3);
             const y = (13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
-            
             target[i * 3] = x * 0.18; 
             target[i * 3 + 1] = y * 0.18 + 0.3; 
             target[i * 3 + 2] = phi * 0.4;      
@@ -214,18 +211,42 @@
             target[i * 3 + 2] = r * Math.sin(phi);
         }
 
-        function getFireworksPosition(i, target) {
-            const totalStreaks = isMobile ? 40 : 100;
-            const streakId = i % totalStreaks;
-            const theta = (streakId / totalStreaks) * Math.PI * 2;
-            const phi = Math.acos((Math.random() * 2) - 1);
-            const speed = 1.8 + Math.random() * 4.5; 
-            target[i * 3] = speed * Math.sin(phi) * Math.cos(theta);
-            target[i * 3 + 1] = speed * Math.sin(phi) * Math.sin(theta);
-            target[i * 3 + 2] = speed * Math.cos(phi);
+        // NEW MATHEMATICAL SHAPE: 3D Logarithmic Spiral Galaxy
+        function getGalaxyPosition(i, target) {
+            // Core vs Arm distribution
+            const isCore = Math.random() < 0.25;
+            
+            if (isCore) {
+                // Dense spherical central bulge
+                const u = Math.random(), v = Math.random();
+                const theta = u * 2.0 * Math.PI;
+                const phi = Math.acos(2.0 * v - 1.0);
+                const r = Math.pow(Math.random(), 2) * 1.5; // Concentrated center
+                
+                target[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+                target[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta) * 0.7;
+                target[i * 3 + 2] = r * Math.cos(phi);
+            } else {
+                // Multi-arm logarithmic distribution
+                const numArms = 4;
+                const armIndex = i % numArms;
+                
+                const distance = Math.random() * 5.5 + 0.5;
+                const spinFactor = 1.8;
+                const angle = (armIndex / numArms) * Math.PI * 2 + distance * spinFactor;
+                
+                // Exponential cloud scatter inside arms
+                const dispersion = 0.4 / (distance * 0.5 + 0.5);
+                const randomX = (Math.random() - 0.5) * dispersion * distance;
+                const randomY = (Math.random() - 0.5) * dispersion * 0.3; // Flat disk plane
+                const randomZ = (Math.random() - 0.5) * dispersion * distance;
+
+                target[i * 3] = Math.cos(angle) * distance + randomX;
+                target[i * 3 + 1] = randomY; 
+                target[i * 3 + 2] = Math.sin(angle) * distance + randomZ;
+            }
         }
 
-        // FIX: Realigned Infinity Loop onto standard XY frontal projection plane
         function getInfinityPosition(i, target) {
             const t = (i / PARTICLE_COUNT) * Math.PI * 2 * 6;
             const scale = 4.0;
@@ -317,7 +338,7 @@
                 if(shapeIndex === 0) getSaturnPosition(i, tempTargets);
                 else if(shapeIndex === 1) getHeartPosition(i, tempTargets);
                 else if(shapeIndex === 2) getFlowerPosition(i, tempTargets);
-                else if(shapeIndex === 3) getFireworksPosition(i, tempTargets);
+                else if(shapeIndex === 3) getGalaxyPosition(i, tempTargets); // Intercept index 3
                 else if(shapeIndex === 4) getInfinityPosition(i, tempTargets);
                 else if(shapeIndex === 5) getDNAPosition(i, tempTargets);
                 else if(shapeIndex === 6) getTornadoPosition(i, tempTargets);
@@ -333,7 +354,7 @@
         function initThree() {
             const container = document.getElementById('canvas-container');
             scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x000000, 0.05);
+            scene.fog = new THREE.FogExp2(0x000000, 0.04);
 
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
             camera.position.set(0, 0, isMobile ? 15 : 11);
@@ -363,7 +384,7 @@
             ctx.fillStyle = grad; ctx.fillRect(0,0,16,16);
             
             const particleMaterial = new THREE.PointsMaterial({
-                size: isMobile ? 0.12 : 0.07,
+                size: isMobile ? 0.11 : 0.065,
                 map: new THREE.CanvasTexture(pCanvas),
                 blending: THREE.AdditiveBlending,
                 depthWrite: false,
@@ -377,8 +398,6 @@
             generateTextPoints();
             transitionToShape(0);
             window.addEventListener('resize', onWindowResize);
-            
-            if(isMobile) setTimeout(toggleDrawer, 1500);
         }
 
         function onWindowResize() {
@@ -395,7 +414,6 @@
                 
                 baseColor.setHSL(wrist.x, 0.9, 0.5);
                 
-                // Track orientation values
                 targetRotationY = (wrist.x - 0.5) * 3.5;
                 targetRotationX = -(wrist.y - 0.5) * 2.5; 
                 
@@ -420,23 +438,23 @@
                 let detectedShape = currentShapeIndex;
 
                 if(isMiddleUp && !isIndexUp && !isRingUp && !isPinkyUp) {
-                    detectedShape = 7; 
+                    detectedShape = 7; // Same to You
                 } else if (extendedCount === 0) {
-                    detectedShape = 6;
+                    detectedShape = 6; // Fist -> Tornado
                 } else if (extendedCount === 1) {
-                    detectedShape = 0;
+                    detectedShape = 0; // 1 Finger -> Saturn
                 } else if (extendedCount === 2) {
-                    detectedShape = 1;
+                    detectedShape = 1; // 2 Fingers -> Heart
                 } else if (extendedCount === 3) {
-                    detectedShape = 2;
+                    detectedShape = 2; // 3 Fingers -> Flower
                 } else if (extendedCount === 4 && !isThumbUp) {
-                    detectedShape = 3;
+                    detectedShape = 3; // 4 Fingers -> Galaxy
                 } else if (extendedCount === 4 && isThumbUp) {
-                    detectedShape = 4;
+                    detectedShape = 4; // 5 Fingers -> Infinity
                 }
                 
                 if (isPinkyUp && isThumbUp && !isIndexUp && !isMiddleUp) {
-                    detectedShape = 5;
+                    detectedShape = 5; // DNA Helix
                 }
 
                 if (detectedShape !== currentShapeIndex) transitionToShape(detectedShape);
@@ -462,20 +480,17 @@
             const positions = particleGeometry.attributes.position.array;
             const colorAttribute = particleGeometry.attributes.color.array;
 
-            // FIX: If shape is Heart (1) or Text (7), forcefully slide rotation targets back to 0 so they remain perfectly front-facing
             if (currentShapeIndex === 1 || currentShapeIndex === 7) {
+                // Heart & Text auto-lock flat
                 particleSystem.rotation.y += (0 - particleSystem.rotation.y) * 0.1;
                 particleSystem.rotation.x += (0 - particleSystem.rotation.x) * 0.1;
             } else {
-                // Other shapes smoothly follow hand coordinate modifications
                 particleSystem.rotation.y += (targetRotationY - particleSystem.rotation.y) * 0.05;
                 particleSystem.rotation.x += (targetRotationX - particleSystem.rotation.x) * 0.05;
                 
-                if(currentShapeIndex === 6) {
-                    particleSystem.rotation.y += 0.04; // Fast Tornado spin
-                } else {
-                    particleSystem.rotation.y += 0.003; // Default continuous spin
-                }
+                if(currentShapeIndex === 6) particleSystem.rotation.y += 0.04; // Tornado spin
+                else if(currentShapeIndex === 3) particleSystem.rotation.y += 0.015; // Galaxy orbit rotation speed
+                else particleSystem.rotation.y += 0.003; 
             }
 
             const interpolationSpeed = isMobile ? 0.12 : 0.07;
@@ -491,10 +506,14 @@
                 positions[i3 + 2] += (tz - positions[i3 + 2]) * interpolationSpeed;
 
                 const pColor = baseColor.clone();
-                if (currentShapeIndex === 5) { 
+                
+                // Color Logic Maps
+                if (currentShapeIndex === 3) {
+                    // Cosmic Galaxy gradient layout (Bright yellow/white cores out to purple/cyan gas arms)
+                    const radialDist = Math.sqrt(tx*tx + tz*tz);
+                    pColor.setHSL(0.55 + (radialDist * 0.06), 0.9, Math.max(0.2, 1.0 - radialDist * 0.15));
+                } else if (currentShapeIndex === 5) { 
                     pColor.offsetHSL((i % 2 === 0 ? 0.3 : 0.7), 0, 0);
-                } else if(currentShapeIndex === 3) { 
-                    pColor.offsetHSL((i % 12 * 0.08), 0, 0);
                 } else if(currentShapeIndex === 7) { 
                     pColor.offsetHSL(positions[i3 + 1] * 0.015, 0, 0);
                 } else {
