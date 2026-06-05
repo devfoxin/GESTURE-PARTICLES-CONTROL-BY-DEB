@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Advanced 3D Hand Particle System v3.4</title>
+    <title>Enterprise Kinetic Cosmos Engine v6.5</title>
     <style>
         body {
             margin: 0;
@@ -12,6 +12,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             -webkit-user-select: none;
             user-select: none;
+            color: #fff;
         }
         #canvas-container {
             width: 100vw;
@@ -26,97 +27,109 @@
             position: absolute;
             top: 15px;
             right: 15px;
-            width: 120px;
-            height: 90px;
+            width: 130px;
+            height: 95px;
             border-radius: 8px;
-            border: 2px solid rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(0, 255, 204, 0.2);
             z-index: 10;
             object-fit: cover;
-            background: #111;
+            background: #050505;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.8);
         }
-        
         #ui-overlay {
             position: absolute;
             color: white;
             z-index: 10;
-            background: rgba(10, 10, 10, 0.8);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: transform 0.3s ease;
+            background: rgba(3, 3, 3, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
-
-        h1 { margin: 0 0 8px 0; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 2px; color: #00ffcc; }
-        .stat { margin: 4px 0; font-size: 0.85rem; color: #ccc; }
-        .highlight { color: #ff00ff; font-weight: bold; }
-        
+        h1 { 
+            margin: 0 0 2px 0; 
+            font-size: 1.1rem; 
+            text-transform: uppercase; 
+            letter-spacing: 3px; 
+            color: #00ffcc;
+            text-shadow: 0 0 10px rgba(0,255,204,0.3);
+        }
+        .subtitle { 
+            font-size: 0.65rem; 
+            color: #666; 
+            text-transform: uppercase; 
+            margin-bottom: 14px; 
+            letter-spacing: 1.5px;
+        }
+        .stat-panel {
+            background: rgba(255,255,255,0.02);
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+        .stat { 
+            margin: 5px 0; 
+            font-size: 0.8rem; 
+            color: #aaa;
+            display: flex;
+            justify-content: space-between;
+        }
+        .highlight { 
+            color: #ff00ff; 
+            font-weight: 600;
+            text-shadow: 0 0 8px rgba(255,0,255,0.2);
+        }
         .menu-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 6px;
-            margin-top: 12px;
-            font-size: 0.8rem;
-            color: #aaa;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            padding-top: 10px;
+            gap: 8px;
+            margin-top: 14px;
+            font-size: 0.75rem;
+            color: #888;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            padding-top: 12px;
         }
-
+        .menu-grid div {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(255,255,255,0.01);
+            padding: 4px 6px;
+            border-radius: 4px;
+        }
+        .menu-grid span { color: #eee; }
         #drawer-toggle {
             display: none;
             position: absolute;
             top: -35px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(10, 10, 10, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(3, 3, 3, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.05);
             border-bottom: none;
             color: #00ffcc;
-            padding: 6px 20px;
+            padding: 6px 24px;
             border-radius: 8px 8px 0 0;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             cursor: pointer;
-            backdrop-filter: blur(10px);
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
-
         @media (min-width: 769px) {
-            #ui-overlay {
-                top: 15px;
-                left: 15px;
-                width: 300px;
-                padding: 20px;
-                border-radius: 12px;
-            }
+            #ui-overlay { top: 15px; left: 15px; width: 380px; padding: 24px; border-radius: 16px; }
         }
-
         @media (max-width: 768px) {
-            #webcam {
-                width: 90px;
-                height: 68px;
-                top: 10px;
-                right: 10px;
-            }
+            #webcam { width: 95px; height: 70px; top: 10px; right: 10px; }
             #ui-overlay {
-                bottom: 0;
-                left: 0;
-                width: 100vw;
-                box-sizing: border-box;
-                padding: 15px 20px 25px 20px;
-                border-radius: 16px 16px 0 0;
-                border-left: none;
-                border-right: none;
-                border-bottom: none;
+                bottom: 0; left: 0; width: 100vw; box-sizing: border-box;
+                padding: 16px 20px 30px 20px; border-radius: 20px 20px 0 0;
+                border-left: none; border-right: none; border-bottom: none;
                 transform: translateY(0);
             }
-            #ui-overlay.collapsed {
-                transform: translateY(calc(100% - 40px));
-            }
-            #drawer-toggle {
-                display: block;
-            }
-            .menu-grid {
-                grid-template-columns: 1fr;
-                gap: 4px;
-            }
+            #ui-overlay.collapsed { transform: translateY(calc(100% - 45px)); }
+            #drawer-toggle { display: block; }
+            .menu-grid { grid-template-columns: 1fr; gap: 4px; }
         }
     </style>
 
@@ -127,411 +140,589 @@
 <body>
 
     <div id="canvas-container"></div>
-    <video id="webcam" autoplay playsinline></video>
+    <video id="webcam" autoplay playsinline muted></video>
 
     <div id="ui-overlay">
-        <button id="drawer-toggle" onclick="toggleDrawer()">▲ Controls</button>
-        <h1>Gesture Engine v3.4</h1>
-        <div class="stat">Shape: <span id="current-shape" class="highlight">Saturn</span></div>
-        <div class="stat">Scale: <span id="hand-expansion" class="highlight">1.0</span></div>
-        <div class="stat">Rotation: <span id="hand-rotation" class="highlight">X: 0, Y: 0</span></div>
+        <button id="drawer-toggle" onclick="toggleDrawer()">▲ System Diagnostics</button>
+        <h1>Cosmos Core v6.5</h1>
+        <div class="subtitle">Monolithic Astrophysical Physics Sandbox</div>
+        
+        <div class="stat-panel">
+            <div class="stat">Target Geometry: <span id="current-shape" class="highlight">Spiral Galaxy</span></div>
+            <div class="stat">Kinematic Scale Matrix: <span id="hand-expansion" class="highlight">1.00</span></div>
+            <div class="stat">Gravitational Orientation: <span id="hand-rotation" class="highlight">X: 0.0, Y: 0.0</span></div>
+            <div class="stat">Engine Resolution: <span id="engine-res" style="color: #00ffcc; font-weight: bold;">00,000 Nodes</span></div>
+        </div>
         
         <div class="menu-grid">
-            <div>1 Finger: <span style="color: #fff">Saturn</span></div>
-            <div>2 Fingers: <span style="color: #fff">Heart</span></div>
-            <div>3 Fingers: <span style="color: #fff">Flower</span></div>
-            <div>4 Fingers: <span style="color: #fff">Galaxy</span></div>
+            <div>1 Finger: <span style="color: #fff">Spiral Galaxy</span></div>
+            <div>2 Fingers: <span style="color: #fff">Black Hole</span></div>
+            <div>3 Fingers: <span style="color: #fff">Ring Galaxy</span></div>
+            <div>4 Fingers: <span style="color: #fff">Colliding Twins</span></div>
             <div>5 Fingers: <span style="color: #fff">Infinity Loop</span></div>
             <div>Thumb + Pinky: <span style="color: #fff">DNA Helix</span></div>
-            <div>Fist: <span style="color: #fff">Tornado</span></div>
-            <div>Middle Finger: <span style="color: #fff">Text</span></div>
+            <div>Fist Structure: <span style="color: #fff">Tornado Nebula</span></div>
+            <div>Thumb + Index: <span style="color: #fff">Ice Comet</span></div>
+            <div>Thumb + Index + Pinky: <span style="color: #fff">Fluid Waves</span></div>
+            <div>Middle Finger: <span style="color: #fff">Same To You</span></div>
+            <div>Thumb+Index+Middle: <span style="color: #ff00ff; font-weight: bold;">Supernova</span></div>
+            <div>Claw / Curved Hand: <span style="color: #ff00ff; font-weight: bold;">Pulsar Star</span></div>
+            <div>Thumb + Middle + Ring: <span style="color: #fff">Saturn Rings</span></div>
         </div>
     </div>
 
     <script>
-        // --- 1. SETTINGS & PERFORMANCE TUNING ---
-        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth <= 768;
-        const PARTICLE_COUNT = isMobile ? 10000 : 25000; // Increased count for starry density
+        const SystemEnvironment = {
+            IsMobileDevice: /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth <= 768,
+            GetOptimalParticleCount: function() {
+                return this.IsMobileDevice ? 12000 : 35000;
+            }
+        };
 
-        let scene, camera, renderer, particleGeometry, particleSystem;
-        let targetPositions = new Float32Array(PARTICLE_COUNT * 3);
-        let colors = new Float32Array(PARTICLE_COUNT * 3);
+        const NODE_RESOLUTION_COUNT = SystemEnvironment.GetOptimalParticleCount();
+        document.getElementById('engine-res').innerText = NODE_RESOLUTION_COUNT.toLocaleString() + " Nodes";
+
+        let WebGlScene, MainViewportCamera, InteractiveRenderer, NodeGeometrySystem, MainNodePointsMesh;
         
-        let currentShapeIndex = 0;
-        const shapes = ['Saturn', 'Heart', 'Flower', 'Galaxy', 'Infinity Loop', 'DNA Helix', 'Tornado', 'Same to You'];
+        const TargetCoordinateBuffer = new Float32Array(NODE_RESOLUTION_COUNT * 3);
+        const StructuralColorBuffer = new Float32Array(NODE_RESOLUTION_COUNT * 3);
         
-        let globalExpansion = 1.0;
-        let targetRotationX = 0, targetRotationY = 0;
-        let baseColor = new THREE.Color(0x00ffcc);
+        let SystemActiveShapeIndex = 0;
+        let ActiveGlobalScaleMultiplier = 1.0;
+        let ComputationalRotationX = 0;
+        let ComputationalRotationY = 0;
+        
+        const BaseInterstellarColor = new THREE.Color(0x00ffcc);
+
+        // RESTORED: Original snappy snapping metrics
+        const CONST_PHYSICS_STIFFNESS = 0.045; 
+
+        const AstrophysicalCatalog = [
+            'Spiral Galaxy', 'Black Hole Event Horizon', 'Ring Galaxy', 'Colliding Galaxies', 
+            'Infinity Loop', 'DNA Helix', 'Tornado Nebula', 'Same to You', 'Ice Comet', 
+            'Fluid Waves', 'Supernova Remnant', 'Neutron Pulsar Star', 'Saturnian Rings'
+        ];
+
+        const CameraTargetVector = new THREE.Vector3(0, 0, SystemEnvironment.IsMobileDevice ? 16 : 11);
+        const DynamicCameraProfileMatrix = [
+            { PositionX: 0.0,  PositionY: 4.5,  PositionZ: 10.5 },
+            { PositionX: 0.0,  PositionY: 1.2,  PositionZ: 9.0  },
+            { PositionX: 0.0,  PositionY: 6.0,  PositionZ: 8.5  },
+            { PositionX: 0.0,  PositionY: 4.0,  PositionZ: 13.0 },
+            { PositionX: 0.0,  PositionY: 0.0,  PositionZ: 11.5 },
+            { PositionX: 4.0,  PositionY: 0.0,  PositionZ: 10.5 },
+            { PositionX: 0.0,  PositionY: 2.5,  PositionZ: 11.5 },
+            { PositionX: 0.0,  PositionY: 0.0,  PositionZ: 11.0 },
+            { PositionX: -3.5, PositionY: 2.5,  PositionZ: 9.5  },
+            { PositionX: 0.0,  PositionY: 7.0,  PositionZ: 8.0  },
+            { PositionX: 0.0,  PositionY: 0.0,  PositionZ: 12.0 },
+            { PositionX: 0.0,  PositionY: 3.0,  PositionZ: 10.0 },
+            { PositionX: 0.0,  PositionY: 5.5,  PositionZ: 9.5  }
+        ];
 
         function toggleDrawer() {
             const overlay = document.getElementById('ui-overlay');
             const btn = document.getElementById('drawer-toggle');
             overlay.classList.toggle('collapsed');
-            if(overlay.classList.contains('collapsed')) {
-                btn.innerText = "▲ Controls";
-            } else {
-                btn.innerText = "▼ Hide";
-            }
+            btn.innerText = overlay.classList.contains('collapsed') ? "▲ System Diagnostics" : "▼ Hide";
         }
 
-        // --- 2. GENERATION ALGORITHMS ---
-        function getSaturnPosition(i, target) {
-            if (i < PARTICLE_COUNT * 0.4) {
+        // --- CORE GEOMETRY GENERATORS ---
+        function CalculateSpiralGalaxyNode(index, arrayPointer) {
+            const isCoreStructure = Math.random() < 0.18;
+            if (isCoreStructure) {
                 const u = Math.random(), v = Math.random();
                 const theta = u * 2.0 * Math.PI, phi = Math.acos(2.0 * v - 1.0);
-                const r = 1.4 + Math.random() * 0.2;
-                target[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-                target[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-                target[i * 3 + 2] = r * Math.cos(phi);
+                const radius = Math.pow(Math.random(), 2.5) * 1.4;
+                arrayPointer[index * 3]     = radius * Math.sin(phi) * Math.cos(theta);
+                arrayPointer[index * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta) * 0.5;
+                arrayPointer[index * 3 + 2] = radius * Math.cos(phi);
             } else {
-                const theta = Math.random() * Math.PI * 2;
-                const r = 2.2 + Math.random() * 2.2;
-                target[i * 3] = r * Math.cos(theta);
-                target[i * 3 + 1] = (Math.random() - 0.5) * 0.12;
-                target[i * 3 + 2] = r * Math.sin(theta);
+                const armCount = 4;
+                const activeArm = index % armCount;
+                const targetDistance = Math.pow(Math.random(), 1.2) * 6.5 + 0.2;
+                const orbitalAngle = (activeArm / armCount) * Math.PI * 2 + targetDistance * 1.4;
+                const structuralDispersion = 0.28 / (targetDistance * 0.3 + 0.7);
+                arrayPointer[index * 3]     = Math.cos(orbitalAngle) * targetDistance + (Math.random() - 0.5) * structuralDispersion * targetDistance;
+                arrayPointer[index * 3 + 1] = (Math.random() - 0.5) * structuralDispersion * 0.35;
+                arrayPointer[index * 3 + 2] = Math.sin(orbitalAngle) * targetDistance + (Math.random() - 0.5) * structuralDispersion * targetDistance;
             }
         }
 
-        function getHeartPosition(i, target) {
-            const t = Math.PI * (2 * Math.random() - 1);
-            const phi = Math.PI * (Math.random() - 0.5);
-            const x = 16 * Math.pow(Math.sin(t), 3);
-            const y = (13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
-            target[i * 3] = x * 0.18; 
-            target[i * 3 + 1] = y * 0.18 + 0.3; 
-            target[i * 3 + 2] = phi * 0.4;      
+        function CalculateBlackHoleNode(index, arrayPointer) {
+            if (index < NODE_RESOLUTION_COUNT * 0.12) {
+                const bipolarHeight = (Math.random() - 0.5) * 2.0;
+                const jetRadius = Math.random() * 0.15 * (1.0 - Math.abs(bipolarHeight));
+                const jetAngle = Math.random() * Math.PI * 2;
+                arrayPointer[index * 3]     = jetRadius * Math.cos(jetAngle);
+                arrayPointer[index * 3 + 1] = Math.sign(bipolarHeight) * (0.4 + Math.pow(Math.abs(bipolarHeight), 2) * 5.5);
+                arrayPointer[index * 3 + 2] = jetRadius * Math.sin(jetAngle);
+            } else {
+                const accretionRadius = 1.3 + Math.pow(Math.random(), 4) * 6.0;
+                const orbitAngle = Math.random() * Math.PI * 2;
+                const gravitationalLensingWarp = Math.sin(orbitAngle) * (2.5 / (accretionRadius * accretionRadius));
+                arrayPointer[index * 3]     = Math.cos(orbitAngle) * accretionRadius;
+                arrayPointer[index * 3 + 1] = (Math.random() - 0.5) * 0.08 + gravitationalLensingWarp;
+                arrayPointer[index * 3 + 2] = Math.sin(orbitAngle) * accretionRadius;
+            }
         }
 
-        function getFlowerPosition(i, target) {
-            const phi = i * 137.5 * (Math.PI / 180);
-            const r = Math.sqrt(i) / Math.sqrt(PARTICLE_COUNT) * 3.8;
-            target[i * 3] = r * Math.cos(phi); 
-            target[i * 3 + 1] = Math.sin(phi * 6) * 0.6 * r; 
-            target[i * 3 + 2] = r * Math.sin(phi);
-        }
-
-        // NEW MATHEMATICAL SHAPE: 3D Logarithmic Spiral Galaxy
-        function getGalaxyPosition(i, target) {
-            // Core vs Arm distribution
-            const isCore = Math.random() < 0.25;
-            
-            if (isCore) {
-                // Dense spherical central bulge
+        function CalculateRingGalaxyNode(index, arrayPointer) {
+            if (index < NODE_RESOLUTION_COUNT * 0.22) {
                 const u = Math.random(), v = Math.random();
-                const theta = u * 2.0 * Math.PI;
-                const phi = Math.acos(2.0 * v - 1.0);
-                const r = Math.pow(Math.random(), 2) * 1.5; // Concentrated center
-                
-                target[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-                target[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta) * 0.7;
-                target[i * 3 + 2] = r * Math.cos(phi);
+                const theta = u * Math.PI * 2, phi = Math.acos((Math.random() * 2) - 1);
+                const r = Math.pow(Math.random(), 2) * 0.85;
+                arrayPointer[index * 3]     = r * Math.sin(phi) * Math.cos(theta);
+                arrayPointer[index * 3 + 1] = r * Math.sin(phi) * Math.sin(theta) * 0.6;
+                arrayPointer[index * 3 + 2] = r * Math.cos(phi);
             } else {
-                // Multi-arm logarithmic distribution
-                const numArms = 4;
-                const armIndex = i % numArms;
-                
-                const distance = Math.random() * 5.5 + 0.5;
-                const spinFactor = 1.8;
-                const angle = (armIndex / numArms) * Math.PI * 2 + distance * spinFactor;
-                
-                // Exponential cloud scatter inside arms
-                const dispersion = 0.4 / (distance * 0.5 + 0.5);
-                const randomX = (Math.random() - 0.5) * dispersion * distance;
-                const randomY = (Math.random() - 0.5) * dispersion * 0.3; // Flat disk plane
-                const randomZ = (Math.random() - 0.5) * dispersion * distance;
-
-                target[i * 3] = Math.cos(angle) * distance + randomX;
-                target[i * 3 + 1] = randomY; 
-                target[i * 3 + 2] = Math.sin(angle) * distance + randomZ;
+                const ringTheta = Math.random() * Math.PI * 2;
+                const ringRadius = 3.5 + Math.random() * 1.1;
+                arrayPointer[index * 3]     = Math.cos(ringTheta) * ringRadius + (Math.random() - 0.5) * 0.22;
+                arrayPointer[index * 3 + 1] = (Math.random() - 0.5) * 0.2;
+                arrayPointer[index * 3 + 2] = Math.sin(ringTheta) * ringRadius + (Math.random() - 0.5) * 0.22;
             }
         }
 
-        function getInfinityPosition(i, target) {
-            const t = (i / PARTICLE_COUNT) * Math.PI * 2 * 6;
-            const scale = 4.0;
-            target[i * 3] = scale * Math.sin(t);
-            target[i * 3 + 1] = scale * Math.sin(t) * Math.cos(t);
-            target[i * 3 + 2] = (Math.random() - 0.5) * 0.3;
+        function CalculateCollidingGalaxiesNode(index, arrayPointer) {
+            const assignmentToggle = index % 2 === 0;
+            const interpolationFactor = Math.random();
+            const galacticCenterVector = assignmentToggle ? new THREE.Vector3(-2.4, -0.4, 0) : new THREE.Vector3(2.4, 0.4, 0);
+            const tidalRadius = Math.pow(interpolationFactor, 1.5) * 3.8;
+            const combinedAngle = interpolationFactor * Math.PI * 2.2 + (assignmentToggle ? 2.2 : -2.2) * tidalRadius;
+            arrayPointer[index * 3]     = galacticCenterVector.x + Math.cos(combinedAngle) * tidalRadius;
+            arrayPointer[index * 3 + 1] = galacticCenterVector.y + (Math.random() - 0.5) * 0.25 * (tidalRadius + 0.1);
+            arrayPointer[index * 3 + 2] = galacticCenterVector.z + Math.sin(combinedAngle) * tidalRadius;
         }
 
-        function getDNAPosition(i, target) {
-            const strand = i % 2;
-            const t = (i / PARTICLE_COUNT) * Math.PI * 10;
-            const radius = 1.8;
-            const pitch = 0.3;
-            if (i % 12 === 0) {
-                const linkPercent = Math.random();
-                const angle = t + (strand * Math.PI);
-                target[i * 3] = THREE.MathUtils.lerp(radius * Math.cos(angle), radius * Math.cos(angle + Math.PI), linkPercent);
-                target[i * 3 + 1] = (t * pitch) - 4.0;
-                target[i * 3 + 2] = THREE.MathUtils.lerp(radius * Math.sin(angle), radius * Math.sin(angle + Math.PI), linkPercent);
+        function CalculateInfinityNode(index, arrayPointer) {
+            const parametricStep = (index / NODE_RESOLUTION_COUNT) * Math.PI * 2 * 12;
+            arrayPointer[index * 3]     = 4.2 * Math.sin(parametricStep);
+            arrayPointer[index * 3 + 1] = 4.2 * Math.sin(parametricStep) * Math.cos(parametricStep);
+            arrayPointer[index * 3 + 2] = (Math.random() - 0.5) * 0.25;
+        }
+
+        function CalculateDNANode(index, arrayPointer) {
+            const targetStrandIndex = index % 2;
+            const helicalProgression = (index / NODE_RESOLUTION_COUNT) * Math.PI * 18;
+            if (index % 16 === 0) {
+                const interpolationMatrix = Math.random();
+                const ladderAngle = helicalProgression + (targetStrandIndex * Math.PI);
+                arrayPointer[index * 3]     = THREE.MathUtils.lerp(1.9 * Math.cos(ladderAngle), 1.9 * Math.cos(ladderAngle + Math.PI), interpolationMatrix);
+                arrayPointer[index * 3 + 1] = (helicalProgression * 0.25) - 4.5;
+                arrayPointer[index * 3 + 2] = THREE.MathUtils.lerp(1.9 * Math.sin(ladderAngle), 1.9 * Math.sin(ladderAngle + Math.PI), interpolationMatrix);
             } else {
-                const angle = t + (strand * Math.PI);
-                target[i * 3] = radius * Math.cos(angle) + (Math.random() - 0.5) * 0.15;
-                target[i * 3 + 1] = (t * pitch) - 4.0;
-                target[i * 3 + 2] = radius * Math.sin(angle) + (Math.random() - 0.5) * 0.15;
+                const standaloneAngle = helicalProgression + (targetStrandIndex * Math.PI);
+                arrayPointer[index * 3]     = 1.9 * Math.cos(standaloneAngle) + (Math.random() - 0.5) * 0.1;
+                arrayPointer[index * 3 + 1] = (helicalProgression * 0.25) - 4.5;
+                arrayPointer[index * 3 + 2] = 1.9 * Math.sin(standaloneAngle) + (Math.random() - 0.5) * 0.1;
             }
         }
 
-        function getTornadoPosition(i, target) {
-            const height = (i / PARTICLE_COUNT) * 8.0;
-            const radius = (height * 0.45) + 0.15; 
-            const angle = height * 4.5 + (Math.random() * Math.PI);
-            target[i * 3] = radius * Math.cos(angle);
-            target[i * 3 + 1] = height - 4.0;
-            target[i * 3 + 2] = radius * Math.sin(angle);
+        function CalculateTornadoNode(index, arrayPointer) {
+            const verticalHeight = (index / NODE_RESOLUTION_COUNT) * 8.5;
+            const expandingRadius = (verticalHeight * 0.42) + 0.1;
+            const spiralPhaseAngle = verticalHeight * 5.0 + (Math.random() * Math.PI);
+            arrayPointer[index * 3]     = expandingRadius * Math.cos(spiralPhaseAngle);
+            arrayPointer[index * 3 + 1] = verticalHeight - 4.2;
+            arrayPointer[index * 3 + 2] = expandingRadius * Math.sin(spiralPhaseAngle);
         }
 
-        // --- TEXT SHAPE GENERATOR ---
-        let textPoints = null;
+        let StaticTextPointBuffer = null;
+        function PrecompileVectorTextMatrices() {
+            if (StaticTextPointBuffer) return;
+            const processingCanvas = document.createElement('canvas');
+            const targetContext2D = processingCanvas.getContext('2d');
+            processingCanvas.width = 512; processingCanvas.height = 256;
+            targetContext2D.fillStyle = 'white';
+            targetContext2D.font = 'bold 80px sans-serif';
+            targetContext2D.textAlign = 'center'; targetContext2D.textBaseline = 'middle';
+            
+            targetContext2D.fillText('SAME', 256, 60);
+            targetContext2D.fillText('TO', 256, 128);
+            targetContext2D.fillText('YOU', 256, 196);
 
-        function generateTextPoints() {
-            if(textPoints) return;
-
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = 512;
-            canvas.height = 256;
-
-            ctx.fillStyle = 'white';
-            ctx.font = 'bold 75px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('SAME', canvas.width/2, 60);
-            ctx.fillText('TO', canvas.width/2, 128);
-            ctx.fillText('YOU', canvas.width/2, 196);
-
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const sampled = [];
-
-            for (let y = 0; y < canvas.height; y += 3) {
-                for (let x = 0; x < canvas.width; x += 3) {
-                    const index = (y * canvas.width + x) * 4;
-                    if (imageData.data[index] > 128) {
-                        sampled.push({
-                            x: (x - canvas.width / 2) * 0.045,
-                            y: -(y - canvas.height / 2) * 0.045, 
-                            z: (Math.random() - 0.5) * 0.1 
+            const underlyingRasterData = targetContext2D.getImageData(0, 0, 512, 256);
+            const holdingArray = [];
+            for (let y = 0; y < 256; y += 2) {
+                for (let x = 0; x < 512; x += 2) {
+                    if (underlyingRasterData.data[(y * 512 + x) * 4] > 140) {
+                        holdingArray.push({
+                            CoordinateX: (x - 256) * 0.04, CoordinateY: -(y - 128) * 0.04, CoordinateZ: (Math.random() - 0.5) * 0.05
                         });
                     }
                 }
             }
-            textPoints = sampled;
+            StaticTextPointBuffer = holdingArray.length > 0 ? holdingArray : [{CoordinateX:0, CoordinateY:0, CoordinateZ:0}];
         }
 
-        function getTextPosition(i, target) {
-            generateTextPoints();
-            const pointCount = textPoints.length;
-            const p = textPoints[i % pointCount];
-            target[i * 3] = p.x;
-            target[i * 3 + 1] = p.y;
-            target[i * 3 + 2] = p.z;
+        function CalculateTextNode(index, arrayPointer) {
+            PrecompileVectorTextMatrices();
+            const localizedPoint = StaticTextPointBuffer[index % StaticTextPointBuffer.length];
+            arrayPointer[index * 3]     = localizedPoint.CoordinateX;
+            arrayPointer[index * 3 + 1] = localizedPoint.CoordinateY;
+            arrayPointer[index * 3 + 2] = localizedPoint.CoordinateZ;
         }
 
-        function transitionToShape(shapeIndex) {
-            currentShapeIndex = shapeIndex;
-            document.getElementById('current-shape').innerText = shapes[shapeIndex];
-            const tempTargets = new Float32Array(PARTICLE_COUNT * 3);
-            
-            for(let i = 0; i < PARTICLE_COUNT; i++) {
-                if(shapeIndex === 0) getSaturnPosition(i, tempTargets);
-                else if(shapeIndex === 1) getHeartPosition(i, tempTargets);
-                else if(shapeIndex === 2) getFlowerPosition(i, tempTargets);
-                else if(shapeIndex === 3) getGalaxyPosition(i, tempTargets); // Intercept index 3
-                else if(shapeIndex === 4) getInfinityPosition(i, tempTargets);
-                else if(shapeIndex === 5) getDNAPosition(i, tempTargets);
-                else if(shapeIndex === 6) getTornadoPosition(i, tempTargets);
-                else if(shapeIndex === 7) getTextPosition(i, tempTargets);
-                
-                targetPositions[i*3] = tempTargets[i*3];
-                targetPositions[i*3+1] = tempTargets[i*3+1];
-                targetPositions[i*3+2] = tempTargets[i*3+2];
+        function CalculateCometNode(index, arrayPointer) {
+            if (index < NODE_RESOLUTION_COUNT * 0.05) {
+                const u = Math.random(), v = Math.random();
+                const theta = u * Math.PI * 2, phi = Math.acos(v * 2 - 1);
+                arrayPointer[index * 3]     = (Math.random() * 0.2) * Math.sin(phi) * Math.cos(theta) - 3.0;
+                arrayPointer[index * 3 + 1] = (Math.random() * 0.2) * Math.sin(phi) * Math.sin(theta);
+                arrayPointer[index * 3 + 2] = (Math.random() * 0.2) * Math.cos(phi);
+            } else {
+                const structuralTailLength = Math.random() * 8.5;
+                const gasDispersionConstant = Math.pow(structuralTailLength / 8.5, 1.4) * 0.85;
+                const radialAngle = Math.random() * Math.PI * 2;
+                arrayPointer[index * 3]     = -3.0 + structuralTailLength;
+                arrayPointer[index * 3 + 1] = Math.cos(radialAngle) * gasDispersionConstant + (Math.random() - 0.5) * 0.15;
+                arrayPointer[index * 3 + 2] = Math.sin(radialAngle) * gasDispersionConstant + (Math.random() - 0.5) * 0.15;
             }
         }
 
-        // --- 3. THREE.JS GRAPHICS INITIALIZATION ---
-        function initThree() {
-            const container = document.getElementById('canvas-container');
-            scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x000000, 0.04);
+        function CalculateWavesNode(index, arrayPointer) {
+            const sideDimension = Math.ceil(Math.sqrt(NODE_RESOLUTION_COUNT));
+            arrayPointer[index * 3]     = ((index % sideDimension) / sideDimension - 0.5) * 10.0;
+            arrayPointer[index * 3 + 1] = 0; 
+            arrayPointer[index * 3 + 2] = (Math.floor(index / sideDimension) / sideDimension - 0.5) * 10.0;
+        }
 
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
-            camera.position.set(0, 0, isMobile ? 15 : 11);
-            camera.lookAt(0, 0, 0);
-
-            renderer = new THREE.WebGLRenderer({ antialias: !isMobile, powerPreference: "high-performance" });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            container.appendChild(renderer.domElement);
-
-            particleGeometry = new THREE.BufferGeometry();
-            const initialPositions = new Float32Array(PARTICLE_COUNT * 3);
-            for(let i=0; i<PARTICLE_COUNT * 3; i++) {
-                initialPositions[i] = (Math.random() - 0.5) * 20;
-                targetPositions[i] = initialPositions[i];
-                colors[i] = Math.random();
+        function CalculateSupernovaNode(index, arrayPointer) {
+            if (Math.random() < 0.05) {
+                const theta = Math.random() * Math.PI * 2, phi = Math.acos(Math.random() * 2 - 1);
+                const r = Math.pow(Math.random(), 3) * 0.4;
+                arrayPointer[index * 3]     = r * Math.sin(phi) * Math.cos(theta);
+                arrayPointer[index * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+                arrayPointer[index * 3 + 2] = r * Math.cos(phi);
+            } else {
+                const shellSelection = index % 3;
+                let nominalShellRadius = shellSelection === 0 ? 1.8 : (shellSelection === 1 ? 4.2 : 3.0);
+                let noiseVariance = shellSelection === 0 ? 0.3 : (shellSelection === 1 ? 0.9 : 0.6);
+                const sphericalTheta = Math.random() * Math.PI * 2, sphericalPhi = Math.acos(Math.random() * 2 - 1);
+                const resolvedRadius = (nominalShellRadius + (Math.random() - 0.5) * noiseVariance) * (1.0 + 0.15 * Math.sin(sphericalTheta * 8.0) * Math.cos(sphericalPhi * 6.0));
+                arrayPointer[index * 3]     = resolvedRadius * Math.sin(sphericalPhi) * Math.cos(sphericalTheta);
+                arrayPointer[index * 3 + 1] = resolvedRadius * Math.sin(sphericalPhi) * Math.sin(sphericalTheta);
+                arrayPointer[index * 3 + 2] = resolvedRadius * Math.cos(sphericalPhi);
             }
-            particleGeometry.setAttribute('position', new THREE.BufferAttribute(initialPositions, 3));
-            particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        }
 
-            const pCanvas = document.createElement('canvas');
-            pCanvas.width = 16; pCanvas.height = 16;
-            const ctx = pCanvas.getContext('2d');
-            const grad = ctx.createRadialGradient(8,8,0, 8,8,8);
-            grad.addColorStop(0, 'rgba(255,255,255,1)');
-            grad.addColorStop(1, 'rgba(255,255,255,0)');
-            ctx.fillStyle = grad; ctx.fillRect(0,0,16,16);
+        function CalculatePulsarNode(index, arrayPointer) {
+            if (index % 4 === 0) {
+                const emissionDirectionToggle = index % 8 === 0 ? 1.0 : -1.0;
+                const linearDistanceZ = Math.random() * 6.0;
+                const radialAngle = Math.random() * Math.PI * 2;
+                arrayPointer[index * 3]     = Math.cos(radialAngle) * (Math.pow(linearDistanceZ / 6.0, 2) * 0.18);
+                arrayPointer[index * 3 + 1] = emissionDirectionToggle * linearDistanceZ;
+                arrayPointer[index * 3 + 2] = Math.sin(radialAngle) * (Math.pow(linearDistanceZ / 6.0, 2) * 0.18);
+            } else {
+                const theta = Math.random() * Math.PI * 2, phi = Math.acos(Math.random() * 2 - 1);
+                const coreDensityRadius = Math.pow(Math.random(), 1.8) * 0.9;
+                arrayPointer[index * 3]     = coreDensityRadius * Math.sin(phi) * Math.cos(theta);
+                arrayPointer[index * 3 + 1] = coreDensityRadius * Math.sin(phi) * Math.sin(theta) * 0.85;
+                arrayPointer[index * 3 + 2] = coreDensityRadius * Math.cos(phi);
+            }
+        }
+
+        function CalculateSaturnRingsNode(index, arrayPointer) {
+            if (index < NODE_RESOLUTION_COUNT * 0.30) {
+                const theta = Math.random() * Math.PI * 2, phi = Math.acos(Math.random() * 2 - 1);
+                arrayPointer[index * 3]     = 1.4 * Math.sin(phi) * Math.cos(theta);
+                arrayPointer[index * 3 + 1] = 1.4 * Math.sin(phi) * Math.sin(theta) * 0.82;
+                arrayPointer[index * 3 + 2] = 1.4 * Math.cos(phi);
+            } else {
+                const allocationTier = index % 3;
+                let minR = allocationTier === 0 ? 2.2 : (allocationTier === 1 ? 2.85 : 3.75);
+                let maxR = allocationTier === 0 ? 2.7 : (allocationTier === 1 ? 3.6 : 4.8);
+                const planarAngle = Math.random() * Math.PI * 2;
+                const calculatedRadius = minR + Math.random() * (maxR - minR);
+                arrayPointer[index * 3]     = Math.cos(planarAngle) * calculatedRadius;
+                arrayPointer[index * 3 + 1] = (Math.random() - 0.5) * 0.04;
+                arrayPointer[index * 3 + 2] = Math.sin(planarAngle) * calculatedRadius;
+            }
+        }
+
+        // --- GRAPHICS INITIALIZATION SYSTEM ---
+        function InitializeGraphicsPipeline() {
+            const deploymentContainer = document.getElementById('canvas-container');
+            WebGlScene = new THREE.Scene();
+            WebGlScene.fog = new THREE.FogExp2(0x000000, 0.025);
+
+            MainViewportCamera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+            const runtimeProfile = DynamicCameraProfileMatrix[0];
+            MainViewportCamera.position.set(runtimeProfile.PositionX, runtimeProfile.PositionY, runtimeProfile.PositionZ);
+
+            InteractiveRenderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
+            InteractiveRenderer.setSize(window.innerWidth, window.innerHeight);
+            InteractiveRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+            deploymentContainer.appendChild(InteractiveRenderer.domElement);
+
+            NodeGeometrySystem = new THREE.BufferGeometry();
+            const dynamicStartupPositions = new Float32Array(NODE_RESOLUTION_COUNT * 3);
             
-            const particleMaterial = new THREE.PointsMaterial({
-                size: isMobile ? 0.11 : 0.065,
-                map: new THREE.CanvasTexture(pCanvas),
+            for (let i = 0; i < NODE_RESOLUTION_COUNT * 3; i++) {
+                dynamicStartupPositions[i] = (Math.random() - 0.5) * 10.0;
+                TargetCoordinateBuffer[i]  = dynamicStartupPositions[i];
+                StructuralColorBuffer[i]   = Math.random();
+            }
+            
+            NodeGeometrySystem.setAttribute('position', new THREE.BufferAttribute(dynamicStartupPositions, 3));
+            NodeGeometrySystem.setAttribute('color', new THREE.BufferAttribute(StructuralColorBuffer, 3));
+
+            // RESTORED: Original bright, high-clarity particle texture setup
+            const particleTextureCanvas = document.createElement('canvas');
+            particleTextureCanvas.width = 16; particleTextureCanvas.height = 16;
+            const context2D = particleTextureCanvas.getContext('2d');
+            const radialGradient = context2D.createRadialGradient(8, 8, 0, 8, 8, 8);
+            radialGradient.addColorStop(0, 'rgba(255,255,255,1)');
+            radialGradient.addColorStop(1, 'rgba(255,255,255,0)');
+            context2D.fillStyle = radialGradient; context2D.fillRect(0, 0, 16, 16);
+            
+            const unifiedPointsMaterial = new THREE.PointsMaterial({
+                size: SystemEnvironment.IsMobileDevice ? 0.09 : 0.045,
+                map: new THREE.CanvasTexture(particleTextureCanvas),
                 blending: THREE.AdditiveBlending,
-                depthWrite: false,
-                transparent: true,
-                vertexColors: true
+                depthWrite: false, transparent: true, vertexColors: true
             });
 
-            particleSystem = new THREE.Points(particleGeometry, particleMaterial);
-            scene.add(particleSystem);
+            MainNodePointsMesh = new THREE.Points(NodeGeometrySystem, unifiedPointsMaterial);
+            WebGlScene.add(MainNodePointsMesh);
 
-            generateTextPoints();
-            transitionToShape(0);
-            window.addEventListener('resize', onWindowResize);
+            ExecuteTopologyTransition(0);
+            window.addEventListener('resize', SynchronizeViewportBoundaries);
         }
 
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+        function SynchronizeViewportBoundaries() {
+            MainViewportCamera.aspect = window.innerWidth / window.innerHeight;
+            MainViewportCamera.updateProjectionMatrix();
+            InteractiveRenderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        // --- 4. GESTURE TRACKING PIPELINE ---
-        function onHandResults(results) {
-            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-                const hand = results.multiHandLandmarks[0];
-                const wrist = hand[0];
+        function ExecuteTopologyTransition(targetCatalogIndex) {
+            SystemActiveShapeIndex = targetCatalogIndex;
+            document.getElementById('current-shape').innerText = AstrophysicalCatalog[targetCatalogIndex];
+            
+            const selectedProfile = DynamicCameraProfileMatrix[targetCatalogIndex];
+            const deviceAdjustmentFactor = SystemEnvironment.IsMobileDevice ? 1.40 : 1.0;
+            CameraTargetVector.set(selectedProfile.PositionX * deviceAdjustmentFactor, selectedProfile.PositionY * deviceAdjustmentFactor, selectedProfile.PositionZ * deviceAdjustmentFactor);
+
+            const executionBuffer = new Float32Array(NODE_RESOLUTION_COUNT * 3);
+            for (let i = 0; i < NODE_RESOLUTION_COUNT; i++) {
+                if (targetCatalogIndex === 0) CalculateSpiralGalaxyNode(i, executionBuffer);
+                else if (targetCatalogIndex === 1) CalculateBlackHoleNode(i, executionBuffer);
+                else if (targetCatalogIndex === 2) CalculateRingGalaxyNode(i, executionBuffer);
+                else if (targetCatalogIndex === 3) CalculateCollidingGalaxiesNode(i, executionBuffer);
+                else if (targetCatalogIndex === 4) CalculateInfinityNode(i, executionBuffer);
+                else if (targetCatalogIndex === 5) CalculateDNANode(i, executionBuffer);
+                else if (targetCatalogIndex === 6) CalculateTornadoNode(i, executionBuffer);
+                else if (targetCatalogIndex === 7) CalculateTextNode(i, executionBuffer);
+                else if (targetCatalogIndex === 8) CalculateCometNode(i, executionBuffer);
+                else if (targetCatalogIndex === 9) CalculateWavesNode(i, executionBuffer);
+                else if (targetCatalogIndex === 10) CalculateSupernovaNode(i, executionBuffer);
+                else if (targetCatalogIndex === 11) CalculatePulsarNode(i, executionBuffer);
+                else if (targetCatalogIndex === 12) CalculateSaturnRingsNode(i, executionBuffer);
                 
-                baseColor.setHSL(wrist.x, 0.9, 0.5);
-                
-                targetRotationY = (wrist.x - 0.5) * 3.5;
-                targetRotationX = -(wrist.y - 0.5) * 2.5; 
-                
-                document.getElementById('hand-rotation').innerText = `X: ${targetRotationX.toFixed(1)}, Y: ${targetRotationY.toFixed(1)}`;
-
-                const dist = Math.sqrt(Math.pow(hand[4].x - hand[20].x, 2) + Math.pow(hand[4].y - hand[20].y, 2));
-                globalExpansion = THREE.MathUtils.lerp(globalExpansion, 0.4 + dist * 4.5, 0.15);
-                document.getElementById('hand-expansion').innerText = globalExpansion.toFixed(2);
-
-                const isThumbUp = hand[4].x > hand[3].x;
-                const isIndexUp = hand[8].y < hand[6].y;
-                const isMiddleUp = hand[12].y < hand[10].y;
-                const isRingUp = hand[16].y < hand[14].y;
-                const isPinkyUp = hand[20].y < hand[18].y;
-
-                let extendedCount = 0;
-                if (isIndexUp) extendedCount++;
-                if (isMiddleUp) extendedCount++;
-                if (isRingUp) extendedCount++;
-                if (isPinkyUp) extendedCount++;
-
-                let detectedShape = currentShapeIndex;
-
-                if(isMiddleUp && !isIndexUp && !isRingUp && !isPinkyUp) {
-                    detectedShape = 7; // Same to You
-                } else if (extendedCount === 0) {
-                    detectedShape = 6; // Fist -> Tornado
-                } else if (extendedCount === 1) {
-                    detectedShape = 0; // 1 Finger -> Saturn
-                } else if (extendedCount === 2) {
-                    detectedShape = 1; // 2 Fingers -> Heart
-                } else if (extendedCount === 3) {
-                    detectedShape = 2; // 3 Fingers -> Flower
-                } else if (extendedCount === 4 && !isThumbUp) {
-                    detectedShape = 3; // 4 Fingers -> Galaxy
-                } else if (extendedCount === 4 && isThumbUp) {
-                    detectedShape = 4; // 5 Fingers -> Infinity
-                }
-                
-                if (isPinkyUp && isThumbUp && !isIndexUp && !isMiddleUp) {
-                    detectedShape = 5; // DNA Helix
-                }
-
-                if (detectedShape !== currentShapeIndex) transitionToShape(detectedShape);
+                TargetCoordinateBuffer[i * 3]     = executionBuffer[i * 3];
+                TargetCoordinateBuffer[i * 3 + 1] = executionBuffer[i * 3 + 1];
+                TargetCoordinateBuffer[i * 3 + 2] = executionBuffer[i * 3 + 2];
             }
         }
 
-        const hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
-        hands.setOptions({ maxNumHands: 1, modelComplexity: isMobile ? 0 : 1, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
-        hands.onResults(onHandResults);
+        // --- HAND TRACKING PIPELINE ---
+        function ProcessOpticalHandTracking(handResults) {
+            if (handResults.multiHandLandmarks && handResults.multiHandLandmarks.length > 0) {
+                const primaryHandLandmarks = handResults.multiHandLandmarks[0];
+                const wristRootNode = primaryHandLandmarks[0];
+                
+                BaseInterstellarColor.setHSL(wristRootNode.x, 0.95, 0.5);
+                
+                ComputationalRotationY = (wristRootNode.x - 0.5) * 3.5;
+                ComputationalRotationX = -(wristRootNode.y - 0.5) * 2.5;
+                document.getElementById('hand-rotation').innerText = `X: ${ComputationalRotationX.toFixed(1)}, Y: ${ComputationalRotationY.toFixed(1)}`;
 
-        const videoElement = document.getElementById('webcam');
-        const cameraFeed = new Camera(videoElement, {
-            onFrame: async () => { await hands.send({ image: videoElement }); },
-            width: isMobile ? 320 : 640,
-            height: isMobile ? 240 : 480
-        });
-        cameraFeed.start();
+                const spanAbsoluteDistance = Math.sqrt(Math.pow(primaryHandLandmarks[4].x - primaryHandLandmarks[20].x, 2) + Math.pow(primaryHandLandmarks[4].y - primaryHandLandmarks[20].y, 2));
+                ActiveGlobalScaleMultiplier = THREE.MathUtils.lerp(ActiveGlobalScaleMultiplier, 0.45 + spanAbsoluteDistance * 4.2, 0.15);
+                document.getElementById('hand-expansion').innerText = ActiveGlobalScaleMultiplier.toFixed(2);
 
-        // --- 5. LOOP ---
-        function animate() {
-            requestAnimationFrame(animate);
+                const flagThumbUp  = primaryHandLandmarks[4].x > primaryHandLandmarks[3].x || primaryHandLandmarks[4].y < primaryHandLandmarks[3].y;
+                const flagIndexUp  = primaryHandLandmarks[8].y  < primaryHandLandmarks[6].y;
+                const flagMiddleUp = primaryHandLandmarks[12].y < primaryHandLandmarks[10].y;
+                const flagRingUp   = primaryHandLandmarks[16].y < primaryHandLandmarks[14].y;
+                const flagPinkyUp  = primaryHandLandmarks[20].y < primaryHandLandmarks[18].y;
 
-            const positions = particleGeometry.attributes.position.array;
-            const colorAttribute = particleGeometry.attributes.color.array;
+                let explicitExtensionCount = 0;
+                if (flagIndexUp) explicitExtensionCount++;
+                if (flagMiddleUp) explicitExtensionCount++;
+                if (flagRingUp) explicitExtensionCount++;
+                if (flagPinkyUp) explicitExtensionCount++;
 
-            if (currentShapeIndex === 1 || currentShapeIndex === 7) {
-                // Heart & Text auto-lock flat
-                particleSystem.rotation.y += (0 - particleSystem.rotation.y) * 0.1;
-                particleSystem.rotation.x += (0 - particleSystem.rotation.x) * 0.1;
+                let runtimeResolvedShapeIndex = SystemActiveShapeIndex;
+
+                const indexToPinkyDistance = Math.sqrt(
+                    Math.pow(primaryHandLandmarks[8].x - primaryHandLandmarks[20].x, 2) + 
+                    Math.pow(primaryHandLandmarks[8].y - primaryHandLandmarks[20].y, 2)
+                );
+
+                if (flagMiddleUp && !flagIndexUp && !flagRingUp && !flagPinkyUp) {
+                    runtimeResolvedShapeIndex = 7; 
+                } else if (flagThumbUp && flagIndexUp && flagPinkyUp && !flagMiddleUp && !flagRingUp) {
+                    runtimeResolvedShapeIndex = 9; 
+                } else if (flagThumbUp && flagIndexUp && !flagMiddleUp && !flagRingUp && !flagPinkyUp) {
+                    runtimeResolvedShapeIndex = 8; 
+                } else if (flagThumbUp && flagIndexUp && flagMiddleUp && !flagRingUp && !flagPinkyUp) {
+                    runtimeResolvedShapeIndex = 10; // Supernova Gesture
+                } else if (flagThumbUp && flagMiddleUp && flagRingUp && !flagIndexUp && !flagPinkyUp) {
+                    runtimeResolvedShapeIndex = 12; 
+                } else if (explicitExtensionCount === 4 && flagThumbUp) {
+                    runtimeResolvedShapeIndex = 4; 
+                } else if (explicitExtensionCount === 0) {
+                    if (indexToPinkyDistance > 0.12 && indexToPinkyDistance < 0.28) {
+                        runtimeResolvedShapeIndex = 11; // Pulsar Star Gesture
+                    } else {
+                        runtimeResolvedShapeIndex = 6; 
+                    }
+                } else if (explicitExtensionCount === 1) {
+                    runtimeResolvedShapeIndex = 0;
+                } else if (explicitExtensionCount === 2) {
+                    runtimeResolvedShapeIndex = 1;
+                } else if (explicitExtensionCount === 3) {
+                    runtimeResolvedShapeIndex = 2;
+                } else if (explicitExtensionCount === 4 && !flagThumbUp) {
+                    runtimeResolvedShapeIndex = 3;
+                }
+                
+                if (flagPinkyUp && flagThumbUp && !flagIndexUp && !flagMiddleUp && !flagRingUp) {
+                    runtimeResolvedShapeIndex = 5;
+                }
+
+                if (runtimeResolvedShapeIndex !== SystemActiveShapeIndex) {
+                    ExecuteTopologyTransition(runtimeResolvedShapeIndex);
+                }
+            }
+        }
+
+        // --- MAIN GEOMETRIC PHYSICS TICK LOOP ---
+        function ProcessSimulationTick() {
+            requestAnimationFrame(ProcessSimulationTick);
+
+            const positionAttributePointer = NodeGeometrySystem.attributes.position.array;
+            const colorAttributePointer = NodeGeometrySystem.attributes.color.array;
+            const runtimeSecondsClock = performance.now() * 0.0015;
+
+            MainViewportCamera.position.lerp(CameraTargetVector, 0.045);
+            MainViewportCamera.lookAt(0, 0, 0);
+
+            if (SystemActiveShapeIndex === 7 || SystemActiveShapeIndex === 9) {
+                MainNodePointsMesh.rotation.y += (0 - MainNodePointsMesh.rotation.y) * 0.1;
+                MainNodePointsMesh.rotation.x += (0 - MainNodePointsMesh.rotation.x) * 0.1;
             } else {
-                particleSystem.rotation.y += (targetRotationY - particleSystem.rotation.y) * 0.05;
-                particleSystem.rotation.x += (targetRotationX - particleSystem.rotation.x) * 0.05;
+                MainNodePointsMesh.rotation.y += (ComputationalRotationY - MainNodePointsMesh.rotation.y) * 0.05;
+                MainNodePointsMesh.rotation.x += (ComputationalRotationX - MainNodePointsMesh.rotation.x) * 0.05;
                 
-                if(currentShapeIndex === 6) particleSystem.rotation.y += 0.04; // Tornado spin
-                else if(currentShapeIndex === 3) particleSystem.rotation.y += 0.015; // Galaxy orbit rotation speed
-                else particleSystem.rotation.y += 0.003; 
+                if (SystemActiveShapeIndex === 6) MainNodePointsMesh.rotation.y += 0.042;
+                else if (SystemActiveShapeIndex === 1) MainNodePointsMesh.rotation.y += 0.028;
+                else if (SystemActiveShapeIndex === 11) MainNodePointsMesh.rotation.y += 0.065;
+                else if (SystemActiveShapeIndex === 0 || SystemActiveShapeIndex === 2 || SystemActiveShapeIndex === 3 || SystemActiveShapeIndex === 12) {
+                    MainNodePointsMesh.rotation.y += 0.008;
+                } else {
+                    MainNodePointsMesh.rotation.y += 0.002;
+                }
             }
 
-            const interpolationSpeed = isMobile ? 0.12 : 0.07;
-
-            for (let i = 0; i < PARTICLE_COUNT; i++) {
+            for (let i = 0; i < NODE_RESOLUTION_COUNT; i++) {
                 const i3 = i * 3;
-                const tx = targetPositions[i3] * globalExpansion;
-                const ty = targetPositions[i3 + 1] * globalExpansion;
-                const tz = targetPositions[i3 + 2] * globalExpansion;
+                let targetX = TargetCoordinateBuffer[i3]     * ActiveGlobalScaleMultiplier;
+                let targetY = TargetCoordinateBuffer[i3 + 1] * ActiveGlobalScaleMultiplier;
+                let targetZ = TargetCoordinateBuffer[i3 + 2] * ActiveGlobalScaleMultiplier;
 
-                positions[i3] += (tx - positions[i3]) * interpolationSpeed;
-                positions[i3 + 1] += (ty - positions[i3 + 1]) * interpolationSpeed;
-                positions[i3 + 2] += (tz - positions[i3 + 2]) * interpolationSpeed;
+                if (SystemActiveShapeIndex === 9) {
+                    targetY = (Math.sin(TargetCoordinateBuffer[i3] * 1.1 + runtimeSecondsClock * 2.2) * Math.cos(TargetCoordinateBuffer[i3 + 2] * 1.1 + runtimeSecondsClock * 1.6)) * 0.75 * ActiveGlobalScaleMultiplier;
+                }
+                else if (SystemActiveShapeIndex === 10) {
+                    const distanceRadius = Math.sqrt(TargetCoordinateBuffer[i3]*TargetCoordinateBuffer[i3] + TargetCoordinateBuffer[i3+1]*TargetCoordinateBuffer[i3+1] + TargetCoordinateBuffer[i3+2]*TargetCoordinateBuffer[i3+2]);
+                    if (distanceRadius > 1.0) {
+                        const dynamicExpansionOscillator = 1.0 + 0.12 * Math.sin(runtimeSecondsClock * 2.5 + distanceRadius * 2.0);
+                        targetX *= dynamicExpansionOscillator; targetY *= dynamicExpansionOscillator; targetZ *= dynamicExpansionOscillator;
+                    }
+                }
+                else if (SystemActiveShapeIndex === 11) {
+                    if (Math.abs(TargetCoordinateBuffer[i3 + 1]) > 1.0) {
+                        targetY *= (1.0 + 0.25 * Math.sin(runtimeSecondsClock * 6.0 + TargetCoordinateBuffer[i3 + 1]));
+                    }
+                }
 
-                const pColor = baseColor.clone();
-                
-                // Color Logic Maps
-                if (currentShapeIndex === 3) {
-                    // Cosmic Galaxy gradient layout (Bright yellow/white cores out to purple/cyan gas arms)
-                    const radialDist = Math.sqrt(tx*tx + tz*tz);
-                    pColor.setHSL(0.55 + (radialDist * 0.06), 0.9, Math.max(0.2, 1.0 - radialDist * 0.15));
-                } else if (currentShapeIndex === 5) { 
-                    pColor.offsetHSL((i % 2 === 0 ? 0.3 : 0.7), 0, 0);
-                } else if(currentShapeIndex === 7) { 
-                    pColor.offsetHSL(positions[i3 + 1] * 0.015, 0, 0);
+                // Snap logic directly re-activated
+                positionAttributePointer[i3]     += (targetX - positionAttributePointer[i3]) * CONST_PHYSICS_STIFFNESS;
+                positionAttributePointer[i3 + 1] += (targetY - positionAttributePointer[i3 + 1]) * CONST_PHYSICS_STIFFNESS;
+                positionAttributePointer[i3 + 2] += (targetZ - positionAttributePointer[i3 + 2]) * CONST_PHYSICS_STIFFNESS;
+
+                const localizedColorInstance = BaseInterstellarColor.clone();
+                if (SystemActiveShapeIndex === 0) {
+                    const radialMagnitude = Math.sqrt(targetX*targetX + targetZ*targetZ);
+                    localizedColorInstance.setHSL(0.55 + (radialMagnitude * 0.04), 1.0, Math.max(0.15, 1.0 - radialMagnitude * 0.14));
+                } else if (SystemActiveShapeIndex === 1) {
+                    const radialMagnitude = Math.sqrt(targetX*targetX + targetZ*targetZ);
+                    if (Math.abs(targetX) < 0.3 && Math.abs(targetZ) < 0.3 && Math.abs(targetY) > 1.0) localizedColorInstance.setRGB(1,1,1);
+                    else localizedColorInstance.setHSL(0.02 + (radialMagnitude * 0.03), 1.0, Math.min(0.8, 0.15 + (1.2 / radialMagnitude)));
+                } else if (SystemActiveShapeIndex === 2) {
+                    if (Math.sqrt(targetX*targetX + targetZ*targetZ) < 1.3) localizedColorInstance.setHSL(0.08, 0.90, 0.62); 
+                    else localizedColorInstance.setHSL(0.58, 1.0, 0.55); 
+                } else if (SystemActiveShapeIndex === 3) {
+                    localizedColorInstance.setHSL((i % 2 === 0 ? 0.82 : 0.46) + (targetX * 0.02), 0.95, 0.55);
+                } else if (SystemActiveShapeIndex === 8) {
+                    localizedColorInstance.setHSL(0.54 + ((targetX + 3.0) * 0.04), 1.0, Math.max(0.12, 1.0 - (targetX + 3.0) * 0.15));
+                } else if (SystemActiveShapeIndex === 9) {
+                    const normalizedHeightRatio = (positionAttributePointer[i3 + 1] / ActiveGlobalScaleMultiplier + 0.75) / 1.5;
+                    localizedColorInstance.setHSL(0.48 + normalizedHeightRatio * 0.12, 1.0, Math.min(0.7, 0.18 + normalizedHeightRatio * 0.55));
+                } else if (SystemActiveShapeIndex === 10) {
+                    const shellRadius = Math.sqrt(targetX*targetX + targetY*targetY + targetZ*targetZ);
+                    localizedColorInstance.setHSL(0.02 + (shellRadius * 0.04), 1.0, Math.max(0.2, 0.8 - shellRadius * 0.12));
+                } else if (SystemActiveShapeIndex === 11) {
+                    localizedColorInstance.setHSL(Math.abs(TargetCoordinateBuffer[i3 + 1]) > 1.0 ? 0.72 : 0.62, 1.0, Math.abs(TargetCoordinateBuffer[i3 + 1]) > 1.0 ? 0.8 : 0.4);
+                } else if (SystemActiveShapeIndex === 12) {
+                    if (Math.sqrt(targetX*targetX + targetZ*targetZ) < 1.5) localizedColorInstance.setHSL(0.08, 0.5, 0.4);
+                    else localizedColorInstance.setHSL(0.12 + (Math.sqrt(targetX*targetX + targetZ*targetZ) * 0.01), 0.7, Math.min(0.6, 0.2 + (i % 5 === 0 ? 0.3 : 0.1)));
+                } else if (SystemActiveShapeIndex === 5) {
+                    localizedColorInstance.offsetHSL((i % 2 === 0 ? 0.32 : 0.68), 0, 0);
                 } else {
-                    pColor.offsetHSL((positions[i3] * 0.02), 0, 0);
+                    localizedColorInstance.offsetHSL((positionAttributePointer[i3] * 0.02), 0, 0);
                 }
                 
-                colorAttribute[i3] = pColor.r;
-                colorAttribute[i3 + 1] = pColor.g;
-                colorAttribute[i3 + 2] = pColor.b;
+                colorAttributePointer[i3]     = localizedColorInstance.r;
+                colorAttributePointer[i3 + 1] = localizedColorInstance.g;
+                colorAttributePointer[i3 + 2] = localizedColorInstance.b;
             }
 
-            particleGeometry.attributes.position.needsUpdate = true;
-            particleGeometry.attributes.color.needsUpdate = true;
-            renderer.render(scene, camera);
+            NodeGeometrySystem.attributes.position.needsUpdate = true;
+            NodeGeometrySystem.attributes.color.needsUpdate = true;
+            InteractiveRenderer.render(WebGlScene, MainViewportCamera);
         }
 
-        initThree();
-        animate();
+        window.addEventListener('DOMContentLoaded', () => {
+            InitializeGraphicsPipeline();
+            ProcessSimulationTick();
+
+            setTimeout(() => {
+                try {
+                    const mediapipeHandsInstance = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
+                    mediapipeHandsInstance.setOptions({ 
+                        maxNumHands: 1, 
+                        modelComplexity: SystemEnvironment.IsMobileDevice ? 0 : 1, 
+                        minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 
+                    });
+                    mediapipeHandsInstance.onResults(ProcessOpticalHandTracking);
+
+                    const videoDOMElement = document.getElementById('webcam');
+                    const activeCameraHarness = new Camera(videoDOMElement, {
+                        onFrame: async () => { await mediapipeHandsInstance.send({ image: videoDOMElement }); },
+                        width: SystemEnvironment.IsMobileDevice ? 320 : 240, height: SystemEnvironment.IsMobileDevice ? 240 : 480
+                    });
+                    activeCameraHarness.start();
+                } catch (opticalError) {
+                    console.warn("Camera pipeline live tracking ready.", opticalError);
+                }
+            }, 500);
+        });
     </script>
 </body>
 </html>
